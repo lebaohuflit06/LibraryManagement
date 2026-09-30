@@ -1,0 +1,28 @@
+@model BookListViewModel
+@{ ViewData["Title"] = "Tra cứu sách"; }
+
+<h1>Tra cứu sách</h1>
+<form method="get" class="search wide">
+    <input name="q" value="@Model.Q" placeholder="Tên sách, tác giả, nhà xuất bản (không cần gõ dấu)..." />
+    <select name="category">
+        <option value="">Tất cả thể loại</option>
+        @foreach (var c in Model.Categories)
+        {
+            <option value="@c" selected="@(c == Model.Category)">@c</option>
+        }
+    </select>
+    <button class="btn" type="submit">Tìm kiếm</button>
+</form>
+
+<p class="muted">Tìm thấy <b>@Model.Books.Count</b> cuốn sách</p>
+
+@if (Model.Books.Count == 0)
+{
+    <div class="empty">Không có sách phù hợp. Hãy thử từ khóa khác.</div>
+}
+else
+{
+    <div class="grid">
+        @foreach (var b in Model.Books) { <partial name="_BookCard" model="b" /> }
+    </div>
+}

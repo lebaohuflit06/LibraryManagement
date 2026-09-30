@@ -1,0 +1,31 @@
+@model HomeViewModel
+@{ ViewData["Title"] = "Trang chủ"; }
+
+<section class="hero">
+    <div>
+        <h1>Mỗi cuốn sách là một chuyến đi</h1>
+        <p>Tra cứu hàng nghìn đầu sách, đăng ký thẻ thư viện và bắt đầu hành trình đọc của bạn.</p>
+        <form asp-controller="Books" asp-action="Index" method="get" class="search">
+            <input name="q" placeholder="Nhập tên sách, tác giả, nhà xuất bản..." />
+            <button class="btn" type="submit">Tìm sách</button>
+        </form>
+    </div>
+    <div class="stats">
+        <div><b>@Model.BookCount</b><span>Bản sách</span></div>
+        <div><b>@Model.Categories.Count</b><span>Thể loại</span></div>
+        <div><b>@Model.MemberCount</b><span>Độc giả</span></div>
+    </div>
+</section>
+
+<h2 class="sec">Thể loại</h2>
+<div class="chips">
+    @foreach (var c in Model.Categories)
+    {
+        <a class="chip" asp-controller="Books" asp-action="Index" asp-route-category="@c">@c</a>
+    }
+</div>
+
+<h2 class="sec">Sách mới thêm</h2>
+<div class="grid">
+    @foreach (var b in Model.NewBooks) { <partial name="_BookCard" model="b" /> }
+</div>

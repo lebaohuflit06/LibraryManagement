@@ -1,0 +1,24 @@
+@model LibraryCard
+@{ ViewData["Title"] = "Thẻ thư viện"; }
+
+<h1>Thẻ thư viện của tôi</h1>
+<div class="libcard">
+    <div class="lc-head"><span>📖 THƯ VIỆN SÁCH VIỆT</span><small>THẺ ĐỘC GIẢ</small></div>
+    <div class="lc-no">@Model.CardNumber</div>
+    <div class="lc-name">@Model.User?.FullName</div>
+    <div class="lc-row">
+        <div><small>Ngày sinh</small>@Model.DateOfBirth.ToString("dd/MM/yyyy")</div>
+        <div><small>Ngày cấp</small>@Model.IssuedAt.ToString("dd/MM/yyyy")</div>
+        <div><small>Hết hạn</small>@Model.ExpiresAt.ToString("dd/MM/yyyy")</div>
+    </div>
+</div>
+<table class="meta narrow">
+    <tr><th>Email</th><td>@Model.User?.Email</td></tr>
+    <tr><th>Điện thoại</th><td>@Model.Phone</td></tr>
+    <tr><th>CCCD</th><td>@Model.IdNumber</td></tr>
+    <tr><th>Địa chỉ</th><td>@Model.Address</td></tr>
+    <tr><th>Trạng thái</th><td>
+        @if (Model.ExpiresAt >= DateTime.Now) { <span class="stock in">Còn hiệu lực</span> }
+        else { <span class="stock out">Đã hết hạn</span> }
+    </td></tr>
+</table>

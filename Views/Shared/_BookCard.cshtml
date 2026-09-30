@@ -1,0 +1,13 @@
+@model Book
+<a class="book" asp-controller="Books" asp-action="Details" asp-route-id="@Model.Id">
+    <div class="cover" style="--h:@(Model.Id * 47 % 360)">
+        <span>@Model.Title</span>
+    </div>
+    <div class="info">
+        <h3>@Model.Title</h3>
+        <p class="muted">@Model.Author</p>
+        <span class="tag">@Model.Category</span>
+        @if (Model.Available > 0) { <span class="stock in">Còn @Model.Available</span> }
+        else { <span class="stock out">Hết sách</span> }
+    </div>
+</a>

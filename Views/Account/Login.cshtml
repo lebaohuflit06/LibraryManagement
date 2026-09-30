@@ -1,0 +1,21 @@
+@model LoginViewModel
+@{ ViewData["Title"] = "Đăng nhập"; }
+
+<div class="card form">
+    <h1>Đăng nhập</h1>
+    <form asp-action="Login" method="post">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+
+        <label asp-for="Email"></label>
+        <input asp-for="Email" type="email" />
+        <span asp-validation-for="Email" class="err"></span>
+
+        <label asp-for="Password"></label>
+        <input asp-for="Password" />
+        <span asp-validation-for="Password" class="err"></span>
+
+        <button class="btn full" type="submit">Đăng nhập</button>
+    </form>
+    <p class="muted center">Chưa có tài khoản? <a asp-action="Register">Đăng ký ngay</a></p>
+</div>

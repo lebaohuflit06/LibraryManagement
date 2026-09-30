@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Thư viện Sách Việt</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+<header class="topbar">
+    <div class="wrap bar">
+        <a class="brand" asp-controller="Home" asp-action="Index"><span class="logo">📖</span> Thư viện Sách Việt</a>
+        <nav>
+            <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+            <a asp-controller="Books" asp-action="Index">Tra cứu sách</a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="LibraryCard" asp-action="Index">Thẻ thư viện</a>
+                <span class="hello">Xin chào, <b>@User.Identity.Name</b></span>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
+                    <button class="btn btn-ghost" type="submit">Đăng xuất</button>
+                </form>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                <a class="btn" asp-controller="Account" asp-action="Register">Đăng ký</a>
+            }
+        </nav>
+    </div>
+</header>
+
+<main class="wrap">
+    @if (TempData["Msg"] is string msg)
+    {
+        <div class="alert ok">@msg</div>
+    }
+    @RenderBody()
+</main>
+
+<footer class="foot">© @DateTime.Now.Year Thư viện Sách Việt — Đồ án Quản lý thư viện</footer>
+</body>
+</html>

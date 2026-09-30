@@ -1,0 +1,27 @@
+@model Book
+@{ ViewData["Title"] = Model.Title; }
+
+<a class="back" asp-action="Index">← Quay lại danh sách</a>
+<div class="detail">
+    <div class="cover big" style="--h:@(Model.Id * 47 % 360)"><span>@Model.Title</span></div>
+    <div>
+        <h1>@Model.Title</h1>
+        <p class="muted">của <b>@Model.Author</b></p>
+        <table class="meta">
+            <tr><th>Thể loại</th><td>@Model.Category</td></tr>
+            <tr><th>Nhà xuất bản</th><td>@Model.Publisher</td></tr>
+            <tr><th>Năm xuất bản</th><td>@Model.Year</td></tr>
+            <tr><th>Số trang</th><td>@Model.Pages</td></tr>
+            <tr><th>Tình trạng</th><td>
+                @if (Model.Available > 0) { <span class="stock in">Còn @Model.Available / @Model.Quantity cuốn</span> }
+                else { <span class="stock out">Đã hết (@Model.Quantity cuốn đang được mượn)</span> }
+            </td></tr>
+        </table>
+        <h3>Giới thiệu</h3>
+        <p>@Model.Description</p>
+        @if (User.Identity?.IsAuthenticated != true)
+        {
+            <div class="alert">Bạn cần <a asp-controller="Account" asp-action="Login">đăng nhập</a> và có thẻ thư viện để mượn sách.</div>
+        }
+    </div>
+</div>
