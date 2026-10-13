@@ -18,7 +18,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(o =>
     {
         o.LoginPath = "/Account/Login";
-        o.AccessDeniedPath = "/Account/Login";
+        o.AccessDeniedPath = "/Account/AccessDenied";
         o.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 
@@ -26,7 +26,9 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+    DbSeeder.SeedAdmin(db); // tạo tài khoản admin mặc định nếu chưa có
 }
 
 app.UseStaticFiles();
