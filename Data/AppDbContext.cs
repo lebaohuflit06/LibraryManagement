@@ -10,12 +10,29 @@ public class AppDbContext : DbContext
     public DbSet<Book> Books => Set<Book>();
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<LibraryCard> Cards => Set<LibraryCard>();
+    public DbSet<BookCopy> BookCopies => Set<BookCopy>(); // sprint 2
+    public DbSet<Loan> Loans => Set<Loan>(); // sprint 2
+    public DbSet<LoanItem> LoanItems => Set<LoanItem>(); // sprint 2
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
         b.Entity<AppUser>().HasOne(u => u.Card).WithOne(c => c.User)
             .HasForeignKey<LibraryCard>(c => c.UserId);
+
+        b.Entity<LibraryCard>().HasIndex(c => c.CardNumber).IsUnique(); // mỗi CCCD chỉ được cấp 1 thẻ
+
+        b.Entity<BookCopy>().HasIndex(c => new { c.BookId, c.ControlNo }).IsUnique(); // mỗi bản sao có ControlNo riêng, ko trùng nhau
+
+        // quan hệ 1-n giữa Book và BookCopy, Loan và LoanItem
+        b.Entity<BookCopy>().HasOne(c => c.Book).WithMany(bk => bk.Copies)
+            .HasForeignKey(c => c.BookId).OnDelete(DeleteBehavior.Restrict);
+        b.Entity<Loan>().HasOne(l => l.Card).WithMany(c => c.Loans)
+            .HasForeignKey(l => l.CardId).OnDelete(DeleteBehavior.Restrict);
+        b.Entity<LoanItem>().HasOne(i => i.Loan).WithMany(l => l.Items)
+            .HasForeignKey(i => i.LoanId);
+        b.Entity<LoanItem>().HasOne(i => i.Copy).WithMany()
+            .HasForeignKey(i => i.CopyId).OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<Book>().HasData(
             new Book { Id = 1, Title = "Dế Mèn phiêu lưu ký", Author = "Tô Hoài", Category = "Văn học", Publisher = "NXB Kim Đồng", Year = 2019, Pages = 160, Quantity = 5, Available = 5, Description = "Cuộc phiêu lưu của chú Dế Mèn qua nhiều vùng đất, gặp gỡ nhiều bạn bè và rút ra những bài học về lòng dũng cảm, tình bạn." },
