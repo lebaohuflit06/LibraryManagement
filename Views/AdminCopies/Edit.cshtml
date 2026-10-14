@@ -1,0 +1,25 @@
+﻿@model CopyEditViewModel
+@{ ViewData["Title"] = "Sửa đầu sách"; }
+<a class="back" asp-action="Index" asp-route-bookId="@Model.BookId">← Quay lại danh sách đầu sách</a>
+<div class="card form">
+    <h1>Sửa đầu sách @Model.ControlText</h1>
+    <p class="muted">Sách: <b>@Model.BookTitle</b></p>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+ 
+        <label asp-for="Status"></label>
+        <select asp-for="Status">
+            <option value="@((int)BookStatus.Available)">Còn</option>
+            <option value="@((int)BookStatus.Damaged)">Hỏng</option>
+            <option value="@((int)BookStatus.Lost)">Mất</option>
+        </select>
+        <span asp-validation-for="Status" class="err"></span>
+ 
+        <label asp-for="Note"></label>
+        <input asp-for="Note" />
+        <span asp-validation-for="Note" class="err"></span>
+ 
+        <button class="btn full" type="submit">Lưu thay đổi</button>
+    </form>
+</div>

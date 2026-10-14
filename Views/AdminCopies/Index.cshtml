@@ -1,0 +1,42 @@
+﻿@model Book
+@{ ViewData["Title"] = "Đầu sách - " + Model.Title; }
+<a class="back" asp-controller="AdminBooks" asp-action="Index">← Quay lại danh sách sách</a>
+<div class="toolbar">
+    <h1>Đầu sách: @Model.Title</h1>
+    <a class="btn" asp-action="Create" asp-route-bookId="@Model.Id">+ Thêm đầu sách</a>
+</div>
+<p class="muted">
+    Mã sách <b>@Model.Id</b> · @Model.Author · Tổng <b>@Model.Copies.Count</b> cuốn, còn trên kệ <b>@Model.Available</b>
+</p>
+@if (Model.Copies.Count == 0)
+{
+    <div class="empty">Mã sách này chưa có đầu sách nào. Bấm "+ Thêm đầu sách".</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Số kiểm soát</th><th>Tình trạng</th><th>Ghi chú</th><th>Cập nhật lần cuối</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var c in Model.Copies.OrderBy(x => x.ControlNo))
+            {
+                <tr>
+                    <td><b>@c.ControlText</b></td>
+                    <td><span class="badge @LibraryRules.StatusCss(c.Status)">@LibraryRules.StatusText(c.Status)</span></td>
+                    <td>@c.Note</td>
+                    <td>@(c.StatusChangedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn btn-sm" asp-action="Edit" asp-route-id="@c.Id">Sửa</a>
+                            <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa đầu sách này?');">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
