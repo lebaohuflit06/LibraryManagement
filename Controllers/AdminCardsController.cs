@@ -61,11 +61,12 @@ namespace LibraryManagement.Controllers
         {
             if (vm.UserId is { } uid)
             {
-                if (!await _db.Users.AnyAsync(u => u.Id && u.Role == AppRoles.Member))
+                if (!await _db.Users.AnyAsync(u => u.Id == uid && u.Role == AppRoles.Member))
                     ModelState.AddModelError(nameof(vm.UserId), "Thành viên không hợp lệ");
                 else if (await _db.Cards.AnyAsync(c => c.UserId == uid))
                     ModelState.AddModelError(nameof(vm.UserId), "Thành viên này đã có thẻ");
             }
+
             await ValidateCardFields(vm, 0);
 
             if (!ModelState.IsValid)
@@ -151,7 +152,7 @@ namespace LibraryManagement.Controllers
                 .FirstOrDefaultAsync(i => i.Id == id);
             if (item == null) return NotFound();
 
-            var item = item.Loan!.Card!;
+            var card = item.Loan!.Card!;
             if (!item.IsUnpaid) return RedirectToAction(nameof(Details), new { id = card.Id });
 
             // còn khoản nợ KHÁC của thẻ này không?

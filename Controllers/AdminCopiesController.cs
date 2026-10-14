@@ -18,18 +18,21 @@ namespace LibraryManagement.Controllers
         // danh sách đầu sách của một mã sách (read)
         public async Task<IActionResult> Index(int bookId)
         {
-            var book = await _db.Books.AsNoTracking().Include(b => b.Copies).FirstOrDefaultAsync(b => b.Id == bookId);
-            return book == null ? NotFound() : View(book);
+            var book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == bookId);
+            if (book == null) return NotFound();
+            return View(new CopyCreateViewModel { BookId = bookId, Count = 1, BookTitle = book.Title });
         }
+
 
         // thêm đầu sách (create), thêm 1 hoặc nhiều cuốn, số kiểm soát tự đánh tiếp theo
         [HttpGet]
         public async Task<IActionResult> Create(int bookId)
         {
-            var book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id = bookId);
+            var book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == bookId);
             if (book == null) return NotFound();
             return View(new CopyCreateViewModel { BookId = bookId, Count = 1, BookTitle = book.Title });
         }
+
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CopyCreateViewModel vm)
