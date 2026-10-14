@@ -1,0 +1,67 @@
+﻿@model LostDamagedReportViewModel
+@{ ViewData["Title"] = "Báo cáo sách mất / hỏng năm " + Model.Year; }
+<div class="toolbar">
+    <h1>Báo cáo sách mất / hỏng năm @Model.Year</h1>
+    <button class="btn btn-sm" type="button" onclick="window.print()">In báo cáo</button>
+</div>
+<form method="get" class="search wide">
+    <input type="number" name="year" value="@Model.Year" min="2000" max="2100" />
+    <button class="btn" type="submit">Xem năm này</button>
+</form>
+<p class="muted">
+    Danh sách đầu sách bị <b>mất</b> hoặc <b>hỏng</b> trong năm, làm cơ sở để thanh lý.
+    Tổng: <b>@Model.LostCount</b> mất, <b>@Model.DamagedCount</b> hỏng.
+    Bồi thường: <b>@LibraryRules.Money(Model.TotalCompensation)</b> (chưa thu: <b>@LibraryRules.Money(Model.UnpaidCompensation)</b>).
+</p>
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty">Năm @Model.Year không có đầu sách nào bị mất hoặc hỏng.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead>
+                <tr><th>#</th><th>Mã sách</th><th>Tên sách</th><th>Số KS</th><th>Tình trạng</th><th>Ngày ghi nhận</th><th>Người mượn</th><th>Bồi thường</th><th>Ghi chú</th></tr>
+            </thead>
+            <tbody>
+            @{ var n = 0; }
+            @foreach (var r in Model.Rows)
+            {
+                n++;
+                <tr>
+                    <td>@n</td>
+                    <td>@r.Copy.BookId</td>
+                    <td>@r.Copy.Book?.Title</td>
+                    <td>@r.Copy.ControlText</td>
+                    <td><span class="badge @LibraryRules.StatusCss(r.Copy.Status)">@LibraryRules.StatusText(r.Copy.Status)</span></td>
+                    <td>@(r.Copy.StatusChangedAt?.ToString("dd/MM/yyyy"))</td>
+                    <td>
+                        @if (r.Item != null)
+                        {
+                            @(r.Item.Loan?.Card?.User?.FullName)
+                            <small>@(r.Item.Loan?.Card?.CardNumber)</small>
+                        }
+                        else
+                        {
+                            <small>Admin tự đánh dấu</small>
+                        }
+                    </td>
+                    <td>
+                        @if (r.Item != null && r.Item.Compensation > 0)
+                        {
+                            <b>@LibraryRules.Money(r.Item.Compensation)</b>
+                            <small>@(r.Item.CompensationPaid ? "Đã bồi thường" : "Chưa bồi thường")</small>
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </td>
+                    <td>@(r.Item?.Note ?? r.Copy.Note)</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

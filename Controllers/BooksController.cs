@@ -14,7 +14,7 @@ public class BooksController : Controller
     // Tìm kiếm sách (theo tên, tác giả, NXB, thể loại)
     public async Task<IActionResult> Index(string? q, string? category)
     {
-        var all = await _db.Books.AsNoTracking().OrderBy(b => b.Title).ToListAsync();
+        var all = await _db.Books.AsNoTracking().Include(b => b.Copies).OrderBy(b => b.Title).ToListAsync();
         var query = all.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -41,7 +41,7 @@ public class BooksController : Controller
     // Xem thông tin sách
     public async Task<IActionResult> Details(int id)
     {
-        var book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id);
+        var book = await _db.Books.AsNoTracking().Include(b => b.Copies).FirstOrDefaultAsync(b => b.Id == id);
         return book == null ? NotFound() : View(book);
     }
 }

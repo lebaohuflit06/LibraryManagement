@@ -1,0 +1,50 @@
+﻿@model List<LibraryCard>
+@{
+    ViewData["Title"] = "Quản lý thẻ thư viện";
+    var q = ViewBag.Q as string;
+}
+<div class="toolbar">
+    <h1>Quản lý thẻ thư viện</h1>
+    <a class="btn" asp-action="Create">+ Cấp thẻ</a>
+</div>
+<form method="get" class="search wide">
+    <input name="q" value="@q" placeholder="Họ tên, email, số thẻ, CCCD, số điện thoại..." />
+    <button class="btn" type="submit">Tìm</button>
+</form>
+<p class="muted">Có <b>@Model.Count</b> thẻ</p>
+<div class="tbl-wrap">
+    <table class="tbl">
+        <thead>
+            <tr><th>Số thẻ</th><th>Họ tên</th><th>Điện thoại</th><th>Hết hạn</th><th>Tình trạng sử dụng</th><th>Đang mượn</th><th></th></tr>
+        </thead>
+        <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>@c.CardNumber</td>
+                <td>@(c.User?.FullName)<small>@(c.User?.Email)</small></td>
+                <td>@c.Phone</td>
+                <td>
+                    @c.ExpiresAt.ToString("dd/MM/yyyy")
+                    @if (c.ExpiresAt < DateTime.Now) { <span class="badge b-bad">Hết hạn</span> }
+                </td>
+                <td>
+                    @if (c.IsActive) { <span class="badge b-ok">Sử dụng được</span> }
+                    else { <span class="badge b-bad">Không sử dụng</span> }
+                </td>
+                <td>@(c.Loans.Any(l => l.ReturnedAt == null) ? "Có" : "Không")</td>
+                <td>
+                    <div class="row-actions">
+                        <a class="btn btn-sm" asp-action="Details" asp-route-id="@c.Id">Chi tiết</a>
+                        <a class="btn btn-sm" asp-action="Edit" asp-route-id="@c.Id">Sửa</a>
+                        <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa thẻ này?');">
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

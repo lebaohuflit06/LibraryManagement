@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LibraryManagement.Helpers;
 using LibraryManagement.Data;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -30,7 +31,7 @@ public class AccountController : Controller
             return View(vm);
         }
 
-        var user = new AppUser { FullName = vm.FullName.Trim(), Email = email };
+        var user = new AppUser { FullName = vm.FullName.Trim(), Email = email, Role = AppRoles.Member };
         user.PasswordHash = _hasher.HashPassword(user, vm.Password);
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -60,6 +61,10 @@ public class AccountController : Controller
         await SignIn(user);
         if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl)) return Redirect(vm.ReturnUrl);
         return RedirectToAction("Index", "Home");
+
+        // admin vào thẳng trang quản lý, member vào trang chủ
+        if (user.Role == AppRoles.Admin) return RedirectToAction("Index", "AdminBooks");
+        return RedirectToAction("Index", "Home");
     }
 
     // Đăng xuất
@@ -70,13 +75,16 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    public IActionResult AccessDenied() => View();
+
     private Task SignIn(AppUser user)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.FullName),
-            new(ClaimTypes.Email, user.Email)
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Role, user.Role)
         };
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
         return HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);

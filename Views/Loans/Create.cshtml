@@ -1,0 +1,27 @@
+﻿@model BorrowViewModel
+@{
+    ViewData["Title"] = "Mượn sách";
+}
+<a class="back" asp-controller="Books" asp-action="Index">Tra cứu sách</a>
+<div class="card form wide">
+    <h1>Đăng ký mượn sách</h1>
+    <p class="muted">
+        Mỗi lần mượn tối đa @LibraryRules.MaxBooksPerLoan mã sách, trong @LibraryRules.LoanDays ngày.
+        Phải trả sách xong mới được mượn tiếp. Nếu làm mất hoặc hỏng sách, thẻ sẽ tạm ngưng sử dụng cho đến khi bồi thường.
+    </p>
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+
+        <label asp-for="Book1"></label>
+        <select asp-for="Book1" asp-items="Model.Books"><option value="">-- Chọn sách --</option></select>
+        <span asp-validation-for="Book1" class="err"></span>
+
+        <label asp-for="Book2"></label>
+        <select asp-for="Book2" asp-items="Model.Books"><option value="">-- Không chọn --</option></select>
+
+        <label asp-for="Book3"></label>
+        <select asp-for="Book3" asp-items="Model.Books"><option value="">-- Không chọn --</option></select>
+
+        <button class="btn full" type="submit">Xác nhận mượn</button>
+    </form>
+</div>

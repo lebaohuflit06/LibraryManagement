@@ -1,0 +1,21 @@
+﻿@model CopyCreateViewModel
+@{ ViewData["Title"] = "Thêm đầu sách"; }
+<a class="back" asp-action="Index" asp-route-bookId="@Model.BookId">← Quay lại danh sách đầu sách</a>
+<div class="card form">
+    <h1>Thêm đầu sách</h1>
+    <p class="muted">Sách: <b>@Model.BookTitle</b>. Số kiểm soát (001, 002, ...) được hệ thống tự đánh tiếp theo.</p>
+    <form asp-action="Create" method="post">
+        <input type="hidden" asp-for="BookId" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+ 
+        <label asp-for="Count"></label>
+        <input asp-for="Count" />
+        <span asp-validation-for="Count" class="err"></span>
+ 
+        <label asp-for="Note"></label>
+        <input asp-for="Note" />
+        <span asp-validation-for="Note" class="err"></span>
+ 
+        <button class="btn full" type="submit">Thêm</button>
+    </form>
+</div>

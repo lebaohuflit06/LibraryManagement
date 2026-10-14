@@ -1,0 +1,91 @@
+﻿@model MyLoansViewModel
+@{
+    ViewData["Title"] = "Sách của tôi";
+    var unpaid = Model.Loans.SelectMany(l => l.Items).Where(i => i.IsUnpaid).Sum(i => i.Compensation);
+    var hasActive = Model.Loans.Any(l => !l.IsReturned);
+}
+<div class="toolbar">
+    <h1>Sách của tôi</h1>
+    @if (Model.Card.IsActive && !hasActive)
+    {
+        <a class="btn" asp-action="Create">+ Mượn sách</a>
+    }
+</div>
+
+@if (!Model.Card.IsActive)
+{
+    <div class="alert bad">
+        Thẻ của bạn đang <b>không sử dụng</b>. Số tiền cần bồi thường: <b>@LibraryRules.Money(unpaid)</b>.
+        Hãy đến thư viện bồi thường, thẻ sẽ sử dụng được trở lại.
+    </div>
+}
+else if (hasActive)
+{
+    <div class="alert">Bạn đang mượn sách. Hãy trả sách xong mới được mượn tiếp.</div>
+}
+
+@if (Model.Loans.Count == 0)
+{
+    <div class="empty">Bạn chưa mượn sách lần nào. <a asp-controller="Books" asp-action="Index">Tra cứu sách</a></div>
+}
+@foreach (var l in Model.Loans)
+{
+    <div class="card loan">
+        <div class="toolbar">
+            <h3 class="m0">
+                Phiếu mượn #@l.Id
+                @if (l.IsReturned)
+                {
+                    <span class="badge b-ok">Đã trả</span>
+                }
+                else if (l.IsOverdue)
+                {
+
+                    <span class="badge b-bad">Quá hạn</span>
+                }
+                else
+                {
+
+                    <span class="badge b-warn">Đang mượn</span>
+                }
+            </h3>
+            @if (!l.IsReturned)
+            {
+                <a class="btn btn-sm" asp-action="Return" asp-route-id="@l.Id">Trả sách</a>
+            }
+        </div>
+        <p class="muted">
+            Ngày mượn: @l.BorrowedAt.ToString("dd/MM/yyyy") · Hạn trả: @l.DueDate.ToString("dd/MM/yyyy")
+            @if (l.IsReturned)
+            {
+                <text> · Ngày trả: @(l.ReturnedAt?.ToString("dd/MM/yyyy"))</text>
+            }
+        </p>
+        <div class="tbl-wrap">
+            <table class="tbl">
+                <thead><tr><th>Sách</th><th>Số kiểm soát</th><th>Tình trạng khi trả</th><th>Bồi thường</th></tr></thead>
+                <tbody>
+                    @foreach (var it in l.Items)
+                    {
+                        <tr>
+                            <td><a asp-controller="Books" asp-action="Details" asp-route-id="@it.Copy?.BookId">@it.Copy?.Book?.Title</a></td>
+                            <td>@it.Copy?.ControlText</td>
+                            <td>@(l.IsReturned ? LibraryRules.StatusText(it.ReturnStatus) : "Đang mượn")</td>
+                            <td>
+                                @if (it.Compensation > 0)
+                                {
+                                    <b>@LibraryRules.Money(it.Compensation)</b>
+                                    <small>@(it.CompensationPaid ? "Đã bồi thường" : "Chưa bồi thường")</small>
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

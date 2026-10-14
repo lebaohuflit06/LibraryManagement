@@ -9,7 +9,9 @@ public class Book
     public string Publisher { get; set; } = "";
     public int Year { get; set; }
     public int Pages { get; set; }
-    public int Quantity { get; set; }
-    public int Available { get; set; }
+    public int Price { get; set; } // vnd, dùng để tính phí bồi thường
+    public List<BookCopy> Copies { get; set; } = new();
+    public int Quantity => Copies.Count(c => c.Status != BookStatus.Lost); // tổng số cuốn thuộc đầu sách, trừ các bản sao bị mất
+    public int Available => Copies.Count(c => c.Status == BookStatus.Available); // tổng số cuốn còn sẵn sàng cho mượn
     public string Description { get; set; } = "";
 }

@@ -1,0 +1,54 @@
+﻿@model ReturnViewModel
+@{
+    ViewData["Title"] = "Trả sách";
+    var loan = Model.Loan!;
+}
+<h1>Trả sách - Phiếu mượn #@loan.Id</h1>
+<p class="muted">
+    Thẻ @loan.Card?.CardNumber · Ngày mượn: @loan.BorrowedAt.ToString("dd/MM/yyyy") · Hạn trả: @loan.DueDate.ToString("dd/MM/yyyy")
+    @if (loan.IsOverdue)
+    {
+        <span class="badge b-bad">Quá hạn</span>
+    }
+</p>
+<div class="alert">
+    Với mỗi cuốn, chọn tình trạng khi trả. Chọn <b>Hỏng</b> sẽ phải bồi thường @LibraryRules.DamagedPercent% giá sách,
+    <b>Mất</b> phải bồi thường @LibraryRules.LostPercent% giá sách, và thẻ sẽ chuyển sang
+    "không sử dụng" cho đến khi bồi thường.
+</div>
+
+<form asp-action="Return" method="post">
+    <input type="hidden" asp-for="LoanId" />
+    <div asp-validation-summary="ModelOnly" class="err"></div>
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Sách</th><th>Số kiểm soát</th><th>Tình trạng khi trả</th><th>Ghi chú</th></tr></thead>
+            <tbody>
+                @for (var i = 0; i < Model.Items.Count; i++)
+                {
+                    var item = loan.Items.First(x => x.Id == Model.Items[i].LoanItemId);
+                    <tr>
+                        <td>
+                            @(item.Copy?.Book?.Title)
+                            <input type="hidden" asp-for="Items[i].LoanItemId" />
+                        </td>
+                        <td>@item.Copy?.ControlText</td>
+                        <td>
+                            <select asp-for="Items[i].Condition">
+                                <option value="@((int)BookStatus.Available)">Còn tốt</option>
+                                <option value="@((int)BookStatus.Damaged)">Hỏng</option>
+                                <option value="@((int)BookStatus.Lost)">Mất</option>
+                            </select>
+                            <span asp-validation-for="Items[i].Condition" class="err"></span>
+                        </td>
+                        <td>
+                            <input asp-for="Items[i].Note" />
+                            <span asp-validation-for="Items[i].Note" class="err"></span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <button class="btn" type="submit">Xác nhận trả sách</button>
+</form>
