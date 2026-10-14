@@ -1,7 +1,9 @@
+using LibraryManagement.Helpers;
 using LibraryManagement.Data;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace LibraryManagement.Controllers;
 
@@ -15,10 +17,10 @@ public class HomeController : Controller
     {
         var vm = new HomeViewModel
         {
-            NewBooks = await _db.Books.OrderByDescending(b => b.Id).Take(4).ToListAsync(),
+            NewBooks = await _db.Books.Include(b => b.Copies).OrderByDescending(b => b.Id).Take(4).ToListAsync(),
             Categories = await _db.Books.Select(b => b.Category).Distinct().ToListAsync(),
-            BookCount = await _db.Books.SumAsync(b => b.Quantity),
-            MemberCount = await _db.Users.CountAsync()
+            BookCount = await _db.BookCopies.CountAsync(c => c.Status != BookStatus.Lost),
+            MemberCount = await _db.Users.CountAsync(u => u.Role == AppRoles.Member)
         };
         return View(vm);
     }
