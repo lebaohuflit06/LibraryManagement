@@ -14,7 +14,11 @@
             <tr><th>Số trang</th><td>@Model.Pages</td></tr>
             <tr><th>Tình trạng</th><td>
                 @if (Model.Available > 0) { <span class="stock in">Còn @Model.Available / @Model.Quantity cuốn</span> }
-                else { <span class="stock out">Đã hết (@Model.Quantity cuốn đang được mượn)</span> }
+                    else
+                    {
+
+                        <span class="stock out">Hiện hết cuốn sách</span>
+                    }
             </td></tr>
         </table>
         <h3>Giới thiệu</h3>
@@ -22,6 +26,18 @@
         @if (User.Identity?.IsAuthenticated != true)
         {
             <div class="alert">Bạn cần <a asp-controller="Account" asp-action="Login">đăng nhập</a> và có thẻ thư viện để mượn sách.</div>
+        }
+        else if (User.IsInRole("Member"))
+        {
+            if (Model.Available > 0)
+            {
+                <a class="btn" asp-controller="Loans" asp-action="Create" asp-route-bookId="@Model.Id">Mượn cuốn này</a>
+                <p class="muted">Mỗi lần mượn tối đa @LibraryRules.MaxBooksPerLoan mã sách, trong @LibraryRules.LoanDays ngày. Trả sách xong mới được mượn tiếp.</p>
+            }
+            else
+            {
+                <div class="alert">Sách đã hết, vui lòng quay lại sau.</div>
+            }
         }
     </div>
 </div>

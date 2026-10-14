@@ -1,6 +1,9 @@
 @model LibraryCard
-@{ ViewData["Title"] = "Thẻ thư viện"; }
-
+@{
+    ViewData["Title"] = "Thẻ thư viện";
+    var borrowing = Model.Loans.Where(l => l.ReturnedAt == null).Sum(l => l.Items.Count);
+    var unpaid = Model.Loans.SelectMany(l => l.Items).Where(i => i.IsUnpaid).Sum(i => i.Compensation);
+}
 <h1>Thẻ thư viện của tôi</h1>
 <div class="libcard">
     <div class="lc-head"><span>📖 THƯ VIỆN SÁCH VIỆT</span><small>THẺ ĐỘC GIẢ</small></div>
@@ -17,8 +20,29 @@
     <tr><th>Điện thoại</th><td>@Model.Phone</td></tr>
     <tr><th>CCCD</th><td>@Model.IdNumber</td></tr>
     <tr><th>Địa chỉ</th><td>@Model.Address</td></tr>
-    <tr><th>Trạng thái</th><td>
-        @if (Model.ExpiresAt >= DateTime.Now) { <span class="stock in">Còn hiệu lực</span> }
-        else { <span class="stock out">Đã hết hạn</span> }
-    </td></tr>
+    <tr>
+        <th>Hiệu lực</th>
+        <td>
+            @if (Model.ExpiresAt >= DateTime.Now)
+            { <span class="stock in">Còn hiệu lực</span> }
+            else
+            { <span class="stock out">Đã hết hạn</span>   }
+        </td>
+    </tr>
+    <tr>
+        <th>Tình trạng sử dụng</th>
+        <td>
+            @if (Model.IsActive)
+            { <span class="stock in">Sử dụng được</span> }
+            else
+            { <span class="stock out">Không sử dụng</span> }
+        </td>
+    </tr>
+    <tr><th>Đang mượn</th><td>@borrowing / @LibraryRules.MaxBooksPerLoan cuốn</td></tr>
+    <tr><th>Bồi thường chưa trả</th><td>@LibraryRules.Money(unpaid)</td></tr>
 </table>
+@if (!Model.IsActive)
+{
+    <div class="alert bad">Thẻ đang <b>không sử dụng</b> do mất/hỏng sách. Hãy đến thư viện bồi thường để thẻ sử dụng được trở lại.</div>
+}
+<p><a class="btn" asp-controller="Loans" asp-action="Index">Xem sách đã mượn</a></p>
