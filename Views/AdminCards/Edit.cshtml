@@ -1,0 +1,39 @@
+﻿@model AdminCardEditViewModel
+@{ ViewData["Title"] = "Sửa thẻ thư viện"; }
+<a class="back" asp-action="Index">Quay lại danh sách thẻ</a>
+<div class="card form">
+    <h1>Sửa thẻ @Model.CardNumber</h1>
+    <p class="muted">Chủ thẻ: <b>@Model.UserName</b></p>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+ 
+        <label asp-for="DateOfBirth"></label>
+        <input asp-for="DateOfBirth" type="date" />
+        <span asp-validation-for="DateOfBirth" class="err"></span>
+ 
+        <label asp-for="Phone"></label>
+        <input asp-for="Phone" />
+        <span asp-validation-for="Phone" class="err"></span>
+ 
+        <label asp-for="IdNumber"></label>
+        <input asp-for="IdNumber" />
+        <span asp-validation-for="IdNumber" class="err"></span>
+ 
+        <label asp-for="Address"></label>
+        <input asp-for="Address" />
+        <span asp-validation-for="Address" class="err"></span>
+ 
+        <label asp-for="ExpiresAt"></label>
+        <input asp-for="ExpiresAt" type="date" />
+        <span asp-validation-for="ExpiresAt" class="err"></span>
+ 
+        <label asp-for="IsActive"></label>
+        <select asp-for="IsActive">
+            <option value="true">Sử dụng được</option>
+            <option value="false">Không sử dụng</option>
+        </select>
+ 
+        <button class="btn full" type="submit">Lưu thay đổi</button>
+    </form>
+</div>

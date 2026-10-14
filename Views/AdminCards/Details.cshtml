@@ -1,0 +1,83 @@
+﻿@model LibraryCard
+@{ ViewData["Title"] = "Chi tiết thẻ " + Model.CardNumber; }
+<a class="back" asp-action="Index">Quay lại danh sách thẻ</a>
+<h1>Thẻ @Model.CardNumber</h1>
+<table class="meta narrow">
+    <tr><th>Họ tên</th><td>@Model.User?.FullName</td></tr>
+    <tr><th>Email</th><td>@Model.User?.Email</td></tr>
+    <tr><th>Ngày sinh</th><td>@Model.DateOfBirth.ToString("dd/MM/yyyy")</td></tr>
+    <tr><th>Điện thoại</th><td>@Model.Phone</td></tr>
+    <tr><th>CCCD</th><td>@Model.IdNumber</td></tr>
+    <tr><th>Địa chỉ</th><td>@Model.Address</td></tr>
+    <tr><th>Ngày cấp</th><td>@Model.IssuedAt.ToString("dd/MM/yyyy")</td></tr>
+    <tr><th>Hết hạn</th><td>@Model.ExpiresAt.ToString("dd/MM/yyyy")</td></tr>
+    <tr><th>Tình trạng sử dụng</th><td>
+        @if (Model.IsActive) { <span class="badge b-ok">Sử dụng được</span> }
+        else { <span class="badge b-bad">Không sử dụng</span> }
+    </td></tr>
+    <tr><th>Bồi thường chưa trả</th><td>@LibraryRules.Money(Model.Loans.SelectMany(l => l.Items).Where(i => i.IsUnpaid).Sum(i => i.Compensation))</td></tr>
+</table>
+<p><a class="btn btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Sửa thẻ</a></p>
+ 
+<h2 class="sec">Lịch sử mượn sách</h2>
+@if (Model.Loans.Count == 0)
+{
+    <div class="empty">Thẻ này chưa mượn sách.</div>
+}
+@foreach (var l in Model.Loans.OrderByDescending(x => x.Id))
+{
+    <div class="card loan">
+        <div class="toolbar">
+            <h3 class="m0">
+                Phiếu mượn #@l.Id
+                @if (l.IsReturned) { <span class="badge b-ok">Đã trả</span> }
+                else if (l.IsOverdue) { <span class="badge b-bad">Quá hạn</span> }
+                else { <span class="badge b-warn">Đang mượn</span> }
+            </h3>
+            @if (!l.IsReturned)
+            {
+                <a class="btn btn-sm" asp-controller="Loans" asp-action="Return" asp-route-id="@l.Id">Xử lý trả sách</a>
+            }
+        </div>
+        <p class="muted">
+            Ngày mượn: @l.BorrowedAt.ToString("dd/MM/yyyy") · Hạn trả: @l.DueDate.ToString("dd/MM/yyyy")
+            @if (l.IsReturned) { <text> · Ngày trả: @(l.ReturnedAt?.ToString("dd/MM/yyyy"))</text> }
+        </p>
+        <div class="tbl-wrap">
+            <table class="tbl">
+                <thead><tr><th>Sách</th><th>Số KS</th><th>Tình trạng khi trả</th><th>Ghi chú</th><th>Bồi thường</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var it in l.Items)
+                {
+                    <tr>
+                        <td>@it.Copy?.Book?.Title</td>
+                        <td>@it.Copy?.ControlText</td>
+                        <td>@(l.IsReturned ? LibraryRules.StatusText(it.ReturnStatus) : "Đang mượn")</td>
+                        <td>@it.Note</td>
+                        <td>
+                            @if (it.Compensation > 0)
+                            {
+                                <b>@LibraryRules.Money(it.Compensation)</b>
+                                <small>@(it.CompensationPaid ? "Đã bồi thường" : "Chưa bồi thường")</small>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (it.IsUnpaid)
+                            {
+                                <form asp-action="PayCompensation" method="post" onsubmit="return confirm('Xác nhận thẻ đã bồi thường khoản này?');">
+                                    <input type="hidden" name="id" value="@it.Id" />
+                                    <button class="btn btn-sm" type="submit">Xác nhận đã bồi thường</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
