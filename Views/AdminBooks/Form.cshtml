@@ -1,0 +1,55 @@
+﻿@model BookFormViewModel
+@{
+    var isNew = Model.Id == 0;
+    var action = isNew ? "Create" : "Edit";
+    ViewData["Title"] = isNew ? "Thêm mã sách" : "Sửa mã sách";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+}
+<a class="back" asp-action="Index">← Quay lại danh sách</a>
+<div class="card form wide">
+    <h1>@ViewData["Title"]</h1>
+    <form asp-action="@action" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+ 
+        <label asp-for="Title"></label>
+        <input asp-for="Title" />
+        <span asp-validation-for="Title" class="err"></span>
+ 
+        <label asp-for="Author"></label>
+        <input asp-for="Author" />
+        <span asp-validation-for="Author" class="err"></span>
+ 
+        <label asp-for="Category"></label>
+        <input asp-for="Category" list="category-list" />
+        <datalist id="category-list">
+            @foreach (var c in categories)
+            {
+                <option value="@c"></option>
+            }
+        </datalist>
+        <span asp-validation-for="Category" class="err"></span>
+ 
+        <label asp-for="Publisher"></label>
+        <input asp-for="Publisher" />
+        <span asp-validation-for="Publisher" class="err"></span>
+ 
+        <label asp-for="Year"></label>
+        <input asp-for="Year" />
+        <span asp-validation-for="Year" class="err"></span>
+ 
+        <label asp-for="Pages"></label>
+        <input asp-for="Pages" />
+        <span asp-validation-for="Pages" class="err"></span>
+ 
+        <label asp-for="Price"></label>
+        <input asp-for="Price" />
+        <span asp-validation-for="Price" class="err"></span>
+ 
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" rows="4"></textarea>
+        <span asp-validation-for="Description" class="err"></span>
+ 
+        <button class="btn full" type="submit">Lưu</button>
+    </form>
+</div>
