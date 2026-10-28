@@ -1,0 +1,46 @@
+@model OverdueViewModel
+@{ ViewData["Title"] = "Sách quá hạn"; }
+<a class="back" asp-action="Index">← Quay lại phí &amp; bồi thường</a>
+<div class="toolbar">
+    <h1>Sách quá hạn chưa trả</h1>
+    <button class="btn btn-sm no-print" type="button" onclick="window.print()">In danh sách</button>
+</div>
+<p class="muted">
+    Phí trả muộn: <b>@LibraryRules.Money(LibraryRules.LateFeePerDay)</b> / cuốn / ngày (tối đa bằng giá sách; sách mất đã tính bồi thường 100% nên không tính thêm).
+    Khoản phí sẽ được ghi vào sổ phí khi độc giả trả sách. Tạm tính hiện tại: <b>@LibraryRules.Money(Model.TotalAccrued)</b>.
+</p>
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty">Hiện không có phiếu mượn nào quá hạn.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Phiếu</th><th>Độc giả</th><th>Sách đang mượn</th><th>Hạn trả</th><th>Quá hạn</th><th class="num">Phí tạm tính</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Rows)
+                {
+                    <tr>
+                        <td>#@r.Loan.Id</td>
+                        <td>
+                            <a asp-controller="AdminCards" asp-action="Details" asp-route-id="@r.Loan.CardId">@r.Loan.Card?.CardNumber</a>
+                            <small>@r.Loan.Card?.User?.FullName</small>
+                        </td>
+                        <td>
+                            @foreach (var it in r.Loan.Items)
+                            {
+                                <div>@it.Copy?.Book?.Title <small>KS @it.Copy?.ControlText</small></div>
+                            }
+                        </td>
+                        <td>@r.Loan.DueDate.ToString("dd/MM/yyyy")</td>
+                        <td><span class="badge b-bad">@r.Days ngày</span></td>
+                        <td class="num"><b>@LibraryRules.Money(r.Accrued)</b></td>
+                        <td><a class="btn btn-sm" asp-controller="Loans" asp-action="Return" asp-route-id="@r.Loan.Id">Xử lý trả sách</a></td>
+                    </tr>
+                }
+                <tr class="total"><td colspan="5">Tổng tạm tính</td><td class="num">@LibraryRules.Money(Model.TotalAccrued)</td><td></td></tr>
+            </tbody>
+        </table>
+    </div>
+}

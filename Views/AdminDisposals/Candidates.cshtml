@@ -1,0 +1,90 @@
+@model DisposalCandidatesViewModel
+@{
+    ViewData["Title"] = "Sách đề xuất thanh lý";
+    var isAdmin = User.IsInRole("Admin");
+}
+<a class="back" asp-action="Index">← Quay lại báo cáo thanh lý</a>
+<h1>Sách đề xuất thanh lý</h1>
+<p class="muted">
+    Gồm sách mất, hỏng, mượn từ @LibraryRules.WornLoanCount lượt trở lên (cũ rách) hoặc xuất bản từ @LibraryRules.OldBookYears năm trở lên (cũ).
+    Sách đang được mượn không nằm trong danh sách. @if (!isAdmin) { <b>Chỉ Admin được lập biên bản thanh lý.</b> }
+</p>
+
+<div class="tabs">
+    <a class="@(string.IsNullOrEmpty(Model.Reason) ? "on" : "")" asp-action="Candidates" asp-route-q="@Model.Q">Tất cả</a>
+    <a class="@(Model.Reason == "damaged" ? "on" : "")" asp-action="Candidates" asp-route-reason="damaged" asp-route-q="@Model.Q">Hỏng (@Model.DamagedCount)</a>
+    <a class="@(Model.Reason == "lost" ? "on" : "")" asp-action="Candidates" asp-route-reason="lost" asp-route-q="@Model.Q">Mất (@Model.LostCount)</a>
+    <a class="@(Model.Reason == "worn" ? "on" : "")" asp-action="Candidates" asp-route-reason="worn" asp-route-q="@Model.Q">Cũ rách (@Model.WornCount)</a>
+    <a class="@(Model.Reason == "old" ? "on" : "")" asp-action="Candidates" asp-route-reason="old" asp-route-q="@Model.Q">Cũ - xuất bản lâu (@Model.OldCount)</a>
+</div>
+<form method="get" class="filters">
+    <input type="hidden" name="reason" value="@Model.Reason" />
+    <input name="q" value="@Model.Q" placeholder="Tên sách hoặc tác giả..." />
+    <button class="btn" type="submit">Tìm</button>
+</form>
+
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty">Không có cuốn sách nào cần thanh lý.</div>
+}
+else
+{
+    <form asp-action="Create" method="post">
+        <input type="hidden" name="Reason" value="@Model.Reason" />
+        <input type="hidden" name="Q" value="@Model.Q" />
+        <div asp-validation-summary="All" class="err"></div>
+        <div class="tbl-wrap">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        @if (isAdmin) { <th><input type="checkbox" onclick="document.querySelectorAll('.pick').forEach(c => c.checked = this.checked)" title="Chọn tất cả" /></th> }
+                        <th>Sách</th><th>Số KS</th><th>Tình trạng</th><th>Lý do đề xuất</th><th>Năm XB</th><th>Lượt mượn</th><th class="num">Giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            @if (isAdmin) { <td><input class="pick" type="checkbox" name="CopyIds" value="@r.Copy.Id" checked="@Model.CopyIds.Contains(r.Copy.Id)" /></td> }
+                            <td>@r.Copy.Book?.Title<small>@r.Copy.Book?.Author</small></td>
+                            <td><a asp-controller="AdminTracking" asp-action="Copy" asp-route-id="@r.Copy.Id">@r.Copy.ControlText</a></td>
+                            <td><span class="badge @LibraryRules.StatusCss(r.Copy.Status)">@LibraryRules.StatusText(r.Copy.Status)</span><small>@r.Copy.Note</small></td>
+                            <td>@string.Join(", ", r.Reasons.Select(Labels.DisposalReason))</td>
+                            <td>@r.Copy.Book?.Year</td>
+                            <td>@r.LoanCount</td>
+                            <td class="num">@LibraryRules.Money(r.Copy.Book?.Price ?? 0)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (isAdmin)
+        {
+            <div class="card form wide">
+                <h2 class="m0">Lập biên bản thanh lý</h2>
+                <p class="muted">Tích chọn các cuốn ở trên rồi điền thông tin. Sách mất luôn được "ghi giảm" khỏi sổ.</p>
+
+                <label asp-for="Method"></label>
+                <select asp-for="Method">
+                    <option value="@((int)DisposalMethod.Destroy)">Tiêu hủy</option>
+                    <option value="@((int)DisposalMethod.Sell)">Bán thanh lý</option>
+                    <option value="@((int)DisposalMethod.Donate)">Tặng / cho</option>
+                    <option value="@((int)DisposalMethod.WriteOff)">Ghi giảm (chỉ cho sách mất)</option>
+                </select>
+                <span asp-validation-for="Method" class="err"></span>
+
+                <label asp-for="RecoveredAmount"></label>
+                <input asp-for="RecoveredAmount" type="number" min="0" step="1000" />
+                <div class="hint">Chỉ nhập khi bán thanh lý (tổng tiền thu về của cả biên bản).</div>
+                <span asp-validation-for="RecoveredAmount" class="err"></span>
+
+                <label asp-for="Note"></label>
+                <textarea asp-for="Note" rows="2"></textarea>
+                <span asp-validation-for="Note" class="err"></span>
+
+                <button class="btn full" type="submit" onclick="return confirm('Lập biên bản và thanh lý các cuốn đã chọn? Không thể hoàn tác.');">Lập biên bản thanh lý</button>
+            </div>
+        }
+    </form>
+}

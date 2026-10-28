@@ -1,0 +1,52 @@
+@model MyFeesViewModel
+@{ ViewData["Title"] = "Phí của tôi"; }
+<div class="toolbar">
+    <h1>Phí của tôi</h1>
+    <a class="btn btn-sm btn-ghost" asp-action="Index">Sách của tôi</a>
+</div>
+<p class="muted">
+    Gồm tiền bồi thường sách mất / hỏng và phí trả muộn (@LibraryRules.Money(LibraryRules.LateFeePerDay) / cuốn / ngày, tối đa bằng giá sách).
+    Hãy đến thư viện để thanh toán.
+</p>
+<div class="tiles">
+    <div class="tile @(Model.UnpaidAmount > 0 ? "bad" : "good")"><b>@LibraryRules.Money(Model.UnpaidAmount)</b><span>Cần thanh toán</span></div>
+    <div class="tile"><b>@LibraryRules.Money(Model.Fees.Where(f => f.Status == FeeStatus.Paid).Sum(f => f.Amount))</b><span>Đã thanh toán</span></div>
+</div>
+@if (Model.UnpaidAmount > 0)
+{
+    <div class="alert bad">Bạn còn khoản phí chưa thanh toán nên <b>chưa mượn được sách</b> cho đến khi thanh toán xong.</div>
+}
+@if (Model.Fees.Count == 0)
+{
+    <div class="empty">Bạn chưa có khoản phí nào.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Ngày</th><th>Loại</th><th>Nội dung</th><th class="num">Số tiền</th><th>Tình trạng</th></tr></thead>
+            <tbody>
+                @foreach (var f in Model.Fees)
+                {
+                    <tr>
+                        <td>@f.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@Labels.FeeType(f.Type)</td>
+                        <td>@f.Description</td>
+                        <td class="num"><b>@LibraryRules.Money(f.Amount)</b></td>
+                        <td>
+                            <span class="badge @Labels.FeeStatusCss(f.Status)">@Labels.FeeStatus(f.Status)</span>
+                            @if (f.Status == FeeStatus.Paid)
+                            {
+                                <small>@f.ProcessedAt?.ToString("dd/MM/yyyy") · phiếu @f.ReceiptNo</small>
+                            }
+                            else if (f.Status == FeeStatus.Waived)
+                            {
+                                <small>Được miễn: @f.Note</small>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

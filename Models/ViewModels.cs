@@ -110,6 +110,7 @@ public class MyLoansViewModel
 {
     public LibraryCard Card { get; set; } = null!;
     public List<Loan> Loans { get; set; } = new();
+    public int UnpaidFees { get; set; } // tổng phí chưa thanh toán (sprint 3)
 }
 
 // form thêm / sửa MÃ SÁCH (admin). Số lượng cuốn quản lý ở phần "Đầu sách"
@@ -218,6 +219,8 @@ public class LostDamagedRow
 {
     public BookCopy Copy { get; set; } = null!;
     public LoanItem? Item { get; set; }
+    public BookStatus EventStatus { get; set; } // mất hay hỏng (tại thời điểm xảy ra)
+    public DateTime EventAt { get; set; }
 }
 
 public class LostDamagedReportViewModel

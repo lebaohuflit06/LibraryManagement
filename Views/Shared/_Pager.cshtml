@@ -1,0 +1,24 @@
+@* phân trang dùng chung: truyền vào Tuple (trang hiện tại, tổng số trang). Giữ nguyên các tham số lọc trên URL *@
+@model (int Page, int TotalPages)
+@if (Model.TotalPages > 1)
+{
+    string Url(int p)
+    {
+        var q = Context.Request.Query
+            .Where(kv => !string.Equals(kv.Key, "page", StringComparison.OrdinalIgnoreCase))
+            .Select(kv => Uri.EscapeDataString(kv.Key) + "=" + Uri.EscapeDataString(kv.Value.ToString()))
+            .ToList();
+        q.Add("page=" + p);
+        return Context.Request.Path + "?" + string.Join("&", q);
+    }
+    <div class="pager">
+        @if (Model.Page > 1) { <a href="@Url(Model.Page - 1)">‹ Trước</a> } else { <span class="dis">‹ Trước</span> }
+        @for (var i = 1; i <= Model.TotalPages; i++)
+        {
+            if (i == Model.Page) { <span class="cur">@i</span> }
+            else if (i == 1 || i == Model.TotalPages || Math.Abs(i - Model.Page) <= 2) { <a href="@Url(i)">@i</a> }
+            else if (Math.Abs(i - Model.Page) == 3) { <span class="dis">…</span> }
+        }
+        @if (Model.Page < Model.TotalPages) { <a href="@Url(Model.Page + 1)">Sau ›</a> } else { <span class="dis">Sau ›</span> }
+    </div>
+}

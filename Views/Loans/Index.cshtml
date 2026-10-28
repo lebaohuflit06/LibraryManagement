@@ -1,22 +1,32 @@
-﻿@model MyLoansViewModel
+@model MyLoansViewModel
 @{
     ViewData["Title"] = "Sách của tôi";
-    var unpaid = Model.Loans.SelectMany(l => l.Items).Where(i => i.IsUnpaid).Sum(i => i.Compensation);
+    var unpaid = Model.UnpaidFees; // gồm bồi thường + phí trả muộn
     var hasActive = Model.Loans.Any(l => !l.IsReturned);
 }
 <div class="toolbar">
     <h1>Sách của tôi</h1>
-    @if (Model.Card.IsActive && !hasActive)
-    {
-        <a class="btn" asp-action="Create">+ Mượn sách</a>
-    }
+    <div class="row-actions">
+        <a class="btn btn-sm btn-ghost" asp-action="Fees">Phí của tôi</a>
+        @if (Model.Card.IsActive && !hasActive && unpaid == 0)
+        {
+            <a class="btn" asp-action="Create">+ Mượn sách</a>
+        }
+    </div>
 </div>
 
 @if (!Model.Card.IsActive)
 {
     <div class="alert bad">
-        Thẻ của bạn đang <b>không sử dụng</b>. Số tiền cần bồi thường: <b>@LibraryRules.Money(unpaid)</b>.
-        Hãy đến thư viện bồi thường, thẻ sẽ sử dụng được trở lại.
+        Thẻ của bạn đang <b>không sử dụng</b>. Số tiền cần thanh toán: <b>@LibraryRules.Money(unpaid)</b>.
+        Hãy đến thư viện bồi thường, thẻ sẽ sử dụng được trở lại. <a asp-action="Fees">Xem chi tiết phí</a>
+    </div>
+}
+else if (unpaid > 0)
+{
+    <div class="alert bad">
+        Bạn còn khoản phí chưa thanh toán: <b>@LibraryRules.Money(unpaid)</b>. Hãy thanh toán tại thư viện để được mượn sách tiếp.
+        <a asp-action="Fees">Xem chi tiết phí</a>
     </div>
 }
 else if (hasActive)

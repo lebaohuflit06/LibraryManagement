@@ -1,4 +1,4 @@
-﻿@model ReturnViewModel
+@model ReturnViewModel
 @{
     ViewData["Title"] = "Trả sách";
     var loan = Model.Loan!;
@@ -15,6 +15,11 @@
     Với mỗi cuốn, chọn tình trạng khi trả. Chọn <b>Hỏng</b> sẽ phải bồi thường @LibraryRules.DamagedPercent% giá sách,
     <b>Mất</b> phải bồi thường @LibraryRules.LostPercent% giá sách, và thẻ sẽ chuyển sang
     "không sử dụng" cho đến khi bồi thường.
+    @if (loan.IsOverdue)
+    {
+        <br />
+        <text>Phiếu này đã <b>quá hạn @LibraryRules.LateDays(loan.DueDate, DateTime.Now) ngày</b>: phí trả muộn @LibraryRules.Money(LibraryRules.LateFeePerDay)/cuốn/ngày (tối đa bằng giá sách) sẽ được ghi vào sổ phí.</text>
+    }
 </div>
 
 <form asp-action="Return" method="post">

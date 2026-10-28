@@ -1,4 +1,4 @@
-﻿using LibraryManagement.Data;
+using LibraryManagement.Data;
 using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +10,7 @@ namespace LibraryManagement.Controllers
 {
     // quản lý mã sách (tên, tác giả, thể loại, nxb, năm...)
     // quản lý các cuốn cụ thể là AdminCopiesController.
-    [Authorize(Roles =AppRoles.Admin)]
+    [Authorize(Roles = AppRoles.Staff)]
     public class AdminBooksController : Controller
     {
         private readonly AppDbContext _db;

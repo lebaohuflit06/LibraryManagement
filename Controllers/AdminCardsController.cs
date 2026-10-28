@@ -1,4 +1,4 @@
-﻿using LibraryManagement.Data;
+using LibraryManagement.Data;
 using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryManagement.Controllers
 {
-    [Authorize(Roles = AppRoles.Admin)]
+    [Authorize(Roles = AppRoles.Staff)]
     public class AdminCardsController : Controller
     {
         private readonly AppDbContext _db;
@@ -43,6 +43,7 @@ namespace LibraryManagement.Controllers
             var card = await _db.Cards.AsNoTracking()
                 .Include(c => c.User)
                 .Include(c => c.Loans).ThenInclude(l => l.Items).ThenInclude(i => i.Copy).ThenInclude(cp => cp!.Book)
+                .Include(c => c.Fees)
                 .FirstOrDefaultAsync(c => c.Id == id);
             return card == null ? NotFound() : View(card);
         }
@@ -87,7 +88,8 @@ namespace LibraryManagement.Controllers
                 CardNumber = "TMP"
             };
             _db.Cards.Add(card);
-            card.CardNumber = LibraryRules.MakeCardNumber(card.Id);
+            await _db.SaveChangesAsync();                          // lưu trước để có Id
+            card.CardNumber = LibraryRules.MakeCardNumber(card.Id); // rồi mới tạo số thẻ từ Id
             await _db.SaveChangesAsync();
 
             TempData["Msg"] = $"Đã cấp thẻ {card.CardNumber}.";
@@ -144,31 +146,6 @@ namespace LibraryManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // xác nhận thẻ đã bồi thường
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayCompensation(int id)
-        {
-            var item = await _db.LoanItems.Include(i => i.Loan).ThenInclude(l => l!.Card)
-                .FirstOrDefaultAsync(i => i.Id == id);
-            if (item == null) return NotFound();
-
-            var card = item.Loan!.Card!;
-            if (!item.IsUnpaid) return RedirectToAction(nameof(Details), new { id = card.Id });
-
-            // còn khoản nợ KHÁC của thẻ này không?
-            var cardId = card.Id;
-            var otherUnpaid = await _db.LoanItems.AnyAsync(i =>
-                i.Id != id && i.Loan!.CardId == cardId && i.Compensation > 0 && !i.CompensationPaid);
-
-            item.CompensationPaid = true;
-            if (!otherUnpaid) card.IsActive = true;
-            await _db.SaveChangesAsync();
-
-            TempData["Msg"] = otherUnpaid ? "Đã xác nhận bồi thường. Thẻ vẫn còn khoản bồi thường chưa thanh toán."
-                : "Đã xác nhận bồi thường. Thẻ đã SỬ DỤNG ĐƯỢC trở lại.";
-            return RedirectToAction(nameof(Details), new { id = card.Id });
-        }
-
         // xóa thẻ
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -176,9 +153,9 @@ namespace LibraryManagement.Controllers
             var card = await _db.Cards.FirstOrDefaultAsync(c => c.Id == id);
             if (card == null) return NotFound();
 
-            if (await _db.Loans.AnyAsync(l => l.CardId == id))
+            if (await _db.Loans.AnyAsync(l => l.CardId == id) || await _db.Fees.AnyAsync(f => f.CardId == id))
             {
-                TempData["Err"] = $"Không thể xóa thẻ {card.CardNumber} vì thẻ đã có lịch sử mượn sách.";
+                TempData["Err"] = $"Không thể xóa thẻ {card.CardNumber} vì thẻ đã có lịch sử mượn sách hoặc khoản phí.";
                 return RedirectToAction(nameof(Index));
             }
 

@@ -1,8 +1,11 @@
-﻿@model LostDamagedReportViewModel
+@model LostDamagedReportViewModel
 @{ ViewData["Title"] = "Báo cáo sách mất / hỏng năm " + Model.Year; }
 <div class="toolbar">
     <h1>Báo cáo sách mất / hỏng năm @Model.Year</h1>
-    <button class="btn btn-sm" type="button" onclick="window.print()">In báo cáo</button>
+    <div class="row-actions no-print">
+        <a class="btn btn-sm btn-ghost" asp-controller="AdminDisposals" asp-action="Index">Báo cáo thanh lý</a>
+        <button class="btn btn-sm" type="button" onclick="window.print()">In báo cáo</button>
+    </div>
 </div>
 <form method="get" class="search wide">
     <input type="number" name="year" value="@Model.Year" min="2000" max="2100" />
@@ -22,7 +25,7 @@ else
     <div class="tbl-wrap">
         <table class="tbl">
             <thead>
-                <tr><th>#</th><th>Mã sách</th><th>Tên sách</th><th>Số KS</th><th>Tình trạng</th><th>Ngày ghi nhận</th><th>Người mượn</th><th>Bồi thường</th><th>Ghi chú</th></tr>
+                <tr><th>#</th><th>Mã sách</th><th>Tên sách</th><th>Số KS</th><th>Ghi nhận</th><th>Hiện tại</th><th>Ngày ghi nhận</th><th>Người mượn</th><th>Bồi thường</th><th>Ghi chú</th></tr>
             </thead>
             <tbody>
             @{ var n = 0; }
@@ -34,8 +37,9 @@ else
                     <td>@r.Copy.BookId</td>
                     <td>@r.Copy.Book?.Title</td>
                     <td>@r.Copy.ControlText</td>
+                    <td><span class="badge @LibraryRules.StatusCss(r.EventStatus)">@LibraryRules.StatusText(r.EventStatus)</span></td>
                     <td><span class="badge @LibraryRules.StatusCss(r.Copy.Status)">@LibraryRules.StatusText(r.Copy.Status)</span></td>
-                    <td>@(r.Copy.StatusChangedAt?.ToString("dd/MM/yyyy"))</td>
+                    <td>@r.EventAt.ToString("dd/MM/yyyy")</td>
                     <td>
                         @if (r.Item != null)
                         {

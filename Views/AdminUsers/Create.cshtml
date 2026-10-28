@@ -1,0 +1,35 @@
+@model UserCreateViewModel
+@{ ViewData["Title"] = "Tạo tài khoản"; }
+<a class="back" asp-action="Index">← Quay lại danh sách tài khoản</a>
+<div class="card form">
+    <h1>Tạo tài khoản</h1>
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+
+        <label asp-for="FullName"></label>
+        <input asp-for="FullName" />
+        <span asp-validation-for="FullName" class="err"></span>
+
+        <label asp-for="Email"></label>
+        <input asp-for="Email" type="email" />
+        <span asp-validation-for="Email" class="err"></span>
+
+        <label asp-for="Password"></label>
+        <input asp-for="Password" type="text" autocomplete="off" />
+        <span asp-validation-for="Password" class="err"></span>
+        <div class="hint">Tối thiểu 6 ký tự. Hãy gửi mật khẩu này cho người dùng.</div>
+
+        <label asp-for="Role"></label>
+        <select asp-for="Role">
+            @foreach (var r in Model.AllowedRoles)
+            {
+                <option value="@r" selected="@(Model.Role == r)">@AppRoles.Text(r)</option>
+            }
+        </select>
+        <span asp-validation-for="Role" class="err"></span>
+
+        <label class="check"><input asp-for="MustChangePassword" /> @Html.DisplayNameFor(m => m.MustChangePassword)</label>
+
+        <button class="btn full" type="submit">Tạo tài khoản</button>
+    </form>
+</div>

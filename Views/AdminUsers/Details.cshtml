@@ -1,0 +1,91 @@
+@model UserDetailsViewModel
+@{
+    var u = Model.User;
+    ViewData["Title"] = "Tài khoản " + u.FullName;
+    var isAdmin = User.IsInRole("Admin");
+}
+<a class="back" asp-action="Index">← Quay lại danh sách tài khoản</a>
+<div class="toolbar">
+    <h1>@u.FullName
+        <span class="badge @AppRoles.Css(u.Role)">@AppRoles.Text(u.Role)</span>
+        @if (u.IsLocked) { <span class="badge b-bad">Đã khóa</span> }
+    </h1>
+    <div class="row-actions">
+        <a class="btn btn-sm" asp-action="Edit" asp-route-id="@u.Id">Sửa thông tin</a>
+        @if (!Model.IsSelf)
+        {
+            if (u.IsLocked)
+            {
+                <form asp-action="Unlock" method="post" onsubmit="return confirm('Mở khóa tài khoản này?');">
+                    <input type="hidden" name="id" value="@u.Id" />
+                    <button class="btn btn-sm" type="submit">Mở khóa</button>
+                </form>
+            }
+            else
+            {
+                <a class="btn btn-sm btn-danger" asp-action="Lock" asp-route-id="@u.Id">Khóa</a>
+            }
+            <form asp-action="ResetPassword" method="post" onsubmit="return confirm('Đặt lại mật khẩu cho tài khoản này? Mật khẩu cũ sẽ không dùng được nữa.');">
+                <input type="hidden" name="id" value="@u.Id" />
+                <button class="btn btn-sm" type="submit">Đặt lại mật khẩu</button>
+            </form>
+            if (isAdmin)
+            {
+                <form asp-action="Delete" method="post" onsubmit="return confirm('Xóa vĩnh viễn tài khoản này?');">
+                    <input type="hidden" name="id" value="@u.Id" />
+                    <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                </form>
+            }
+        }
+    </div>
+</div>
+
+<table class="meta narrow">
+    <tr><th>Email</th><td>@u.Email</td></tr>
+    <tr><th>Ngày tạo</th><td>@u.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
+    <tr><th>Đăng nhập gần nhất</th><td>@(u.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa đăng nhập")</td></tr>
+    <tr>
+        <th>Trạng thái</th>
+        <td>
+            @if (u.IsLocked) { <span class="badge b-bad">Đã khóa</span> <small>Lý do: @u.LockReason</small> }
+            else { <span class="badge b-ok">Đang hoạt động</span> }
+            @if (u.MustChangePassword) { <small>Đang chờ người dùng đổi mật khẩu tạm.</small> }
+        </td>
+    </tr>
+    <tr>
+        <th>Thẻ thư viện</th>
+        <td>
+            @if (Model.Card != null)
+            {
+                <a asp-controller="AdminCards" asp-action="Details" asp-route-id="@Model.Card.Id">@Model.Card.CardNumber</a>
+                @if (Model.Card.IsActive) { <span class="badge b-ok">Sử dụng được</span> } else { <span class="badge b-bad">Không sử dụng</span> }
+            }
+            else { <text>Chưa có thẻ</text> }
+        </td>
+    </tr>
+    @if (Model.Card != null)
+    {
+        <tr><th>Số lần mượn</th><td>@Model.LoanCount (đang mượn: @Model.BorrowingCount)</td></tr>
+        <tr><th>Phí chưa thanh toán</th><td>@LibraryRules.Money(Model.UnpaidAmount)</td></tr>
+    }
+</table>
+
+<h2 class="sec">Lịch sử thao tác trên tài khoản</h2>
+@if (Model.History.Count == 0)
+{
+    <div class="empty">Chưa có thao tác nào được ghi nhận.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Thời gian</th><th>Thao tác</th><th>Người thực hiện</th><th>Chi tiết</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.History)
+                {
+                    <tr><td>@a.At.ToString("dd/MM/yyyy HH:mm")</td><td>@a.Action</td><td>@a.Actor</td><td>@a.Detail</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

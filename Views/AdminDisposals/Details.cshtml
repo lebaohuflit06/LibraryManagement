@@ -1,0 +1,47 @@
+@model DisposalReport
+@{ ViewData["Title"] = "Biên bản " + Model.Code; }
+<div class="toolbar no-print">
+    <a class="back" asp-action="Index" asp-route-year="@Model.CreatedAt.Year">← Quay lại báo cáo thanh lý</a>
+    <div class="row-actions">
+        <a class="btn btn-sm btn-ghost" asp-action="Export" asp-route-id="@Model.Id">Xuất CSV</a>
+        <button class="btn btn-sm" type="button" onclick="window.print()">In biên bản</button>
+    </div>
+</div>
+<div class="paper">
+    <div class="org">THƯ VIỆN SÁCH VIỆT</div>
+    <h1>BIÊN BẢN THANH LÝ SÁCH</h1>
+    <p class="center muted">Số: <b>@Model.Code</b> · Ngày @Model.CreatedAt.ToString("dd/MM/yyyy")</p>
+    <table class="meta">
+        <tr><th>Người lập</th><td>@Model.CreatedBy</td></tr>
+        <tr><th>Số cuốn thanh lý</th><td>@Model.Items.Count</td></tr>
+        <tr><th>Giá trị sổ sách</th><td>@LibraryRules.Money(Model.TotalBookValue)</td></tr>
+        <tr><th>Tiền thu hồi</th><td>@LibraryRules.Money(Model.RecoveredAmount)</td></tr>
+        @if (!string.IsNullOrWhiteSpace(Model.Note)) { <tr><th>Ghi chú</th><td>@Model.Note</td></tr> }
+    </table>
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>#</th><th>Tên sách</th><th>Số KS</th><th>Lý do</th><th>Hình thức</th><th class="num">Giá sách</th></tr></thead>
+            <tbody>
+                @{ var n = 0; }
+                @foreach (var i in Model.Items.OrderBy(x => x.Copy!.Book!.Title).ThenBy(x => x.Copy!.ControlNo))
+                {
+                    n++;
+                    <tr>
+                        <td>@n</td>
+                        <td>@i.Copy?.Book?.Title<small>@i.Copy?.Book?.Author</small></td>
+                        <td>@i.Copy?.ControlText</td>
+                        <td>@Labels.DisposalReason(i.Reason)</td>
+                        <td>@Labels.DisposalMethod(i.Method)</td>
+                        <td class="num">@LibraryRules.Money(i.BookValue)</td>
+                    </tr>
+                }
+                <tr class="total"><td colspan="5">Tổng giá trị sổ sách</td><td class="num">@LibraryRules.Money(Model.TotalBookValue)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="sign">
+        <div>Người lập biên bản<small>@Model.CreatedBy</small></div>
+        <div>Thủ thư<small>(ký, ghi rõ họ tên)</small></div>
+        <div>Giám đốc thư viện<small>(ký, đóng dấu)</small></div>
+    </div>
+</div>

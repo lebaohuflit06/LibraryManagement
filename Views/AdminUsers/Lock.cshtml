@@ -1,0 +1,18 @@
+@model UserLockViewModel
+@{ ViewData["Title"] = "Khóa tài khoản"; }
+<a class="back" asp-action="Details" asp-route-id="@Model.Id">← Quay lại chi tiết tài khoản</a>
+<div class="card form">
+    <h1>Khóa tài khoản</h1>
+    <p class="muted"><b>@Model.FullName</b> (@Model.Email)</p>
+    <div class="alert">Tài khoản bị khóa sẽ bị đăng xuất ngay và không đăng nhập lại được cho đến khi được mở khóa.</div>
+    <form asp-action="Lock" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+
+        <label asp-for="Reason"></label>
+        <textarea asp-for="Reason" rows="3"></textarea>
+        <span asp-validation-for="Reason" class="err"></span>
+
+        <button class="btn btn-danger full" type="submit">Xác nhận khóa</button>
+    </form>
+</div>

@@ -1,0 +1,110 @@
+@model RoleIndexViewModel
+@{
+    ViewData["Title"] = "Phân quyền";
+    // ma trận quyền: chức năng, Admin, Thủ thư, Thành viên
+    var matrix = new (string Name, bool Admin, bool Lib, bool Mem)[]
+    {
+        ("Tra cứu sách, xem thông tin sách", true, true, true),
+        ("Đăng ký thẻ, mượn / trả sách, xem phí của mình", false, false, true),
+        ("Quản lý mã sách và đầu sách", true, true, false),
+        ("Theo dõi tình trạng sách, xem lịch sử từng cuốn", true, true, false),
+        ("Cấp / sửa thẻ thư viện, xử lý trả sách tại quầy", true, true, false),
+        ("Thu phí, in phiếu thu, tạo phí khác", true, true, false),
+        ("Miễn phí / miễn bồi thường", true, false, false),
+        ("Xem báo cáo sách mất / hỏng và báo cáo thanh lý", true, true, false),
+        ("Lập biên bản thanh lý sách", true, false, false),
+        ("Quản lý tài khoản Thành viên (tạo, sửa, khóa, đặt lại mật khẩu)", true, true, false),
+        ("Quản lý tài khoản nhân viên, xóa tài khoản", true, false, false),
+        ("Phân quyền và xem nhật ký thao tác", true, false, false),
+    };
+}
+<div class="toolbar">
+    <h1>Phân quyền</h1>
+    <a class="btn btn-sm" asp-action="Audit">Nhật ký thao tác</a>
+</div>
+<p class="muted">Gán vai trò cho tài khoản. Vai trò mới có hiệu lực ngay ở lần tải trang tiếp theo của người đó.</p>
+
+<div class="tiles">
+    <a class="tile @(Model.Role == "Admin" ? "on" : "")" asp-action="Index" asp-route-role="Admin"><b>@Model.AdminCount</b><span>Quản trị viên</span></a>
+    <a class="tile @(Model.Role == "Librarian" ? "on" : "")" asp-action="Index" asp-route-role="Librarian"><b>@Model.LibrarianCount</b><span>Thủ thư</span></a>
+    <a class="tile @(Model.Role == "Member" ? "on" : "")" asp-action="Index" asp-route-role="Member"><b>@Model.MemberCount</b><span>Thành viên</span></a>
+</div>
+
+<h2 class="sec">Bảng quyền theo vai trò</h2>
+<div class="tbl-wrap">
+    <table class="tbl matrix">
+        <thead><tr><th>Chức năng</th><th>Quản trị viên</th><th>Thủ thư</th><th>Thành viên</th></tr></thead>
+        <tbody>
+            @foreach (var m in matrix)
+            {
+                <tr>
+                    <td>@m.Name</td>
+                    <td>@Html.Raw(m.Admin ? "<span class=\"yes\">✔</span>" : "<span class=\"no\">—</span>")</td>
+                    <td>@Html.Raw(m.Lib ? "<span class=\"yes\">✔</span>" : "<span class=\"no\">—</span>")</td>
+                    <td>@Html.Raw(m.Mem ? "<span class=\"yes\">✔</span>" : "<span class=\"no\">—</span>")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<h2 class="sec">Gán vai trò cho tài khoản</h2>
+<form method="get" class="filters">
+    <input name="q" value="@Model.Q" placeholder="Họ tên hoặc email..." />
+    <select name="role">
+        <option value="">Mọi vai trò</option>
+        @foreach (var r in AppRoles.All)
+        {
+            <option value="@r" selected="@(Model.Role == r)">@AppRoles.Text(r)</option>
+        }
+    </select>
+    <button class="btn" type="submit">Lọc</button>
+</form>
+
+@if (Model.Users.Count == 0)
+{
+    <div class="empty">Không có tài khoản nào phù hợp.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Họ tên</th><th>Vai trò hiện tại</th><th>Đổi thành</th></tr></thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    <tr>
+                        <td>@u.FullName<small>@u.Email</small></td>
+                        <td>
+                            <span class="badge @AppRoles.Css(u.Role)">@AppRoles.Text(u.Role)</span>
+                            @if (u.IsLocked) { <span class="badge b-bad">Đã khóa</span> }
+                        </td>
+                        <td>
+                            @if (u.Id == Model.CurrentUserId)
+                            {
+                                <small>Tài khoản của bạn</small>
+                            }
+                            else
+                            {
+                                <form asp-action="Change" method="post" class="inline-form" onsubmit="return confirm('Đổi vai trò của @u.FullName?');">
+                                    <input type="hidden" name="id" value="@u.Id" />
+                                    <input type="hidden" name="q" value="@Model.Q" />
+                                    <input type="hidden" name="filter" value="@Model.Role" />
+                                    <input type="hidden" name="page" value="@Model.Page" />
+                                    <select name="role">
+                                        @foreach (var r in AppRoles.All)
+                                        {
+                                            <option value="@r" selected="@(u.Role == r)">@AppRoles.Text(r)</option>
+                                        }
+                                    </select>
+                                    <button class="btn btn-sm" type="submit">Lưu</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.TotalPages)" />
+}

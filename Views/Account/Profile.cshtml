@@ -1,0 +1,25 @@
+@model ProfileViewModel
+@{ ViewData["Title"] = "Tài khoản của tôi"; }
+
+<div class="card form">
+    <h1>Tài khoản của tôi</h1>
+    <table class="meta">
+        <tr><th>Email</th><td>@Model.Email</td></tr>
+        <tr><th>Vai trò</th><td><span class="badge @AppRoles.Css(Model.Role)">@AppRoles.Text(Model.Role)</span></td></tr>
+        <tr><th>Ngày tạo</th><td>@Model.CreatedAt.ToString("dd/MM/yyyy")</td></tr>
+        <tr><th>Đăng nhập gần nhất</th><td>@(Model.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td></tr>
+        @if (Model.CardNumber != null)
+        {
+            <tr><th>Thẻ thư viện</th><td><a asp-controller="LibraryCard" asp-action="Index">@Model.CardNumber</a></td></tr>
+        }
+    </table>
+
+    <form asp-action="Profile" method="post">
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+        <label asp-for="FullName"></label>
+        <input asp-for="FullName" />
+        <span asp-validation-for="FullName" class="err"></span>
+        <button class="btn full" type="submit">Lưu thông tin</button>
+    </form>
+    <p class="muted center"><a asp-action="ChangePassword">Đổi mật khẩu</a></p>
+</div>

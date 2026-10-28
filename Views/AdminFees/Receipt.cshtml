@@ -1,0 +1,38 @@
+@model ReceiptViewModel
+@{ ViewData["Title"] = "Phiếu thu " + Model.ReceiptNo; var first = Model.Fees[0]; }
+<div class="toolbar no-print">
+    <a class="back" asp-action="Index" asp-route-status="all">← Quay lại phí &amp; bồi thường</a>
+    <button class="btn btn-sm" type="button" onclick="window.print()">In phiếu thu</button>
+</div>
+<div class="paper">
+    <div class="org">THƯ VIỆN SÁCH VIỆT</div>
+    <h1>PHIẾU THU</h1>
+    <p class="center muted">Số: <b>@Model.ReceiptNo</b> · Ngày @first.ProcessedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+    <table class="meta">
+        <tr><th>Người nộp</th><td>@Model.Card.User?.FullName</td></tr>
+        <tr><th>Số thẻ</th><td>@Model.Card.CardNumber</td></tr>
+        <tr><th>Hình thức</th><td>@Labels.Method(first.Method)</td></tr>
+        @if (!string.IsNullOrWhiteSpace(first.Note))
+        {
+            <tr><th>Ghi chú</th><td>@first.Note</td></tr>
+        }
+    </table>
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>#</th><th>Loại</th><th>Nội dung</th><th class="num">Số tiền</th></tr></thead>
+            <tbody>
+                @{ var n = 0; }
+                @foreach (var f in Model.Fees)
+                {
+                    n++;
+                    <tr><td>@n</td><td>@Labels.FeeType(f.Type)</td><td>@f.Description</td><td class="num">@LibraryRules.Money(f.Amount)</td></tr>
+                }
+                <tr class="total"><td colspan="3">Tổng cộng</td><td class="num">@LibraryRules.Money(Model.Total)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="sign">
+        <div>Người nộp tiền<small>(ký, ghi rõ họ tên)</small></div>
+        <div>Người thu tiền<small>@first.ProcessedBy</small></div>
+    </div>
+</div>

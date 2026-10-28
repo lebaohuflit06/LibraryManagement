@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Thẻ thư viện";
     var borrowing = Model.Loans.Where(l => l.ReturnedAt == null).Sum(l => l.Items.Count);
-    var unpaid = Model.Loans.SelectMany(l => l.Items).Where(i => i.IsUnpaid).Sum(i => i.Compensation);
+    var unpaid = Model.Fees.Where(f => f.IsUnpaid).Sum(f => f.Amount); // bồi thường + phí trả muộn + phí khác
 }
 <h1>Thẻ thư viện của tôi</h1>
 <div class="libcard">
@@ -39,7 +39,7 @@
         </td>
     </tr>
     <tr><th>Đang mượn</th><td>@borrowing / @LibraryRules.MaxBooksPerLoan cuốn</td></tr>
-    <tr><th>Bồi thường chưa trả</th><td>@LibraryRules.Money(unpaid)</td></tr>
+    <tr><th>Phí chưa thanh toán</th><td>@LibraryRules.Money(unpaid) @if (unpaid > 0) { <a asp-controller="Loans" asp-action="Fees">Xem chi tiết</a> }</td></tr>
 </table>
 @if (!Model.IsActive)
 {

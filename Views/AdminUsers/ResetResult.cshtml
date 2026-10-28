@@ -1,0 +1,12 @@
+@model AppUser
+@{ ViewData["Title"] = "Mật khẩu tạm"; }
+<div class="card form">
+    <h1>Đã đặt lại mật khẩu</h1>
+    <p class="muted"><b>@Model.FullName</b> (@Model.Email)</p>
+    <p>Mật khẩu tạm của tài khoản:</p>
+    <div class="pw-box">@ViewBag.TempPassword</div>
+    <div class="alert">
+        Mật khẩu này <b>chỉ hiển thị một lần</b>. Hãy gửi cho người dùng; họ sẽ phải đổi sang mật khẩu riêng ngay ở lần đăng nhập tiếp theo.
+    </div>
+    <a class="btn full" asp-action="Details" asp-route-id="@Model.Id">Quay lại tài khoản</a>
+</div>

@@ -1,5 +1,8 @@
-﻿@model LibraryCard
-@{ ViewData["Title"] = "Chi tiết thẻ " + Model.CardNumber; }
+@model LibraryCard
+@{
+    ViewData["Title"] = "Chi tiết thẻ " + Model.CardNumber;
+    var unpaidFees = Model.Fees.Where(f => f.IsUnpaid).OrderBy(f => f.Id).ToList();
+}
 <a class="back" asp-action="Index">Quay lại danh sách thẻ</a>
 <h1>Thẻ @Model.CardNumber</h1>
 <table class="meta narrow">
@@ -15,9 +18,62 @@
         @if (Model.IsActive) { <span class="badge b-ok">Sử dụng được</span> }
         else { <span class="badge b-bad">Không sử dụng</span> }
     </td></tr>
-    <tr><th>Bồi thường chưa trả</th><td>@LibraryRules.Money(Model.Loans.SelectMany(l => l.Items).Where(i => i.IsUnpaid).Sum(i => i.Compensation))</td></tr>
+    <tr><th>Phí chưa thanh toán</th><td><b>@LibraryRules.Money(unpaidFees.Sum(f => f.Amount))</b> @if (unpaidFees.Count > 0) { <small>(@unpaidFees.Count khoản)</small> }</td></tr>
 </table>
-<p><a class="btn btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Sửa thẻ</a></p>
+<p class="row-actions">
+    <a class="btn btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Sửa thẻ</a>
+    <a class="btn btn-sm btn-ghost" asp-controller="AdminFees" asp-action="Create" asp-route-cardId="@Model.Id">+ Thêm khoản phí khác</a>
+</p>
+
+<h2 class="sec">Phí &amp; bồi thường</h2>
+@if (Model.Fees.Count == 0)
+{
+    <div class="empty">Thẻ này chưa có khoản phí nào.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Ngày</th><th>Loại</th><th>Nội dung</th><th class="num">Số tiền</th><th>Tình trạng</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var f in Model.Fees.OrderByDescending(x => x.Id))
+                {
+                    <tr>
+                        <td>@f.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@Labels.FeeType(f.Type)</td>
+                        <td>@f.Description</td>
+                        <td class="num"><b>@LibraryRules.Money(f.Amount)</b></td>
+                        <td>
+                            <span class="badge @Labels.FeeStatusCss(f.Status)">@Labels.FeeStatus(f.Status)</span>
+                            @if (f.Status == FeeStatus.Paid) { <small>@f.ProcessedAt?.ToString("dd/MM/yyyy") · @Labels.Method(f.Method)</small> }
+                            else if (f.Status == FeeStatus.Waived) { <small>@f.Note</small> }
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                @if (f.IsUnpaid)
+                                {
+                                    <a class="btn btn-sm" asp-controller="AdminFees" asp-action="Pay" asp-route-id="@f.Id">Thu tiền</a>
+                                    if (User.IsInRole("Admin"))
+                                    {
+                                        <a class="btn btn-sm btn-ghost" asp-controller="AdminFees" asp-action="Waive" asp-route-id="@f.Id">Miễn</a>
+                                    }
+                                }
+                                else if (f.Status == FeeStatus.Paid && f.ReceiptNo != null)
+                                {
+                                    <a class="btn btn-sm btn-ghost" asp-controller="AdminFees" asp-action="Receipt" asp-route-no="@f.ReceiptNo">Phiếu thu</a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (unpaidFees.Count > 1)
+    {
+        <p><a class="btn btn-sm" asp-controller="AdminFees" asp-action="Pay" asp-route-id="@unpaidFees.First().Id" asp-route-all="true">Thu tất cả @unpaidFees.Count khoản (@LibraryRules.Money(unpaidFees.Sum(f => f.Amount)))</a></p>
+    }
+}
  
 <h2 class="sec">Lịch sử mượn sách</h2>
 @if (Model.Loans.Count == 0)
@@ -58,7 +114,7 @@
                             @if (it.Compensation > 0)
                             {
                                 <b>@LibraryRules.Money(it.Compensation)</b>
-                                <small>@(it.CompensationPaid ? "Đã bồi thường" : "Chưa bồi thường")</small>
+                                <small>@(it.CompensationPaid ? "Đã xử lý" : "Chưa bồi thường")</small>
                             }
                             else
                             {
@@ -66,12 +122,10 @@
                             }
                         </td>
                         <td>
-                            @if (it.IsUnpaid)
+                            @{ var itemFee = Model.Fees.FirstOrDefault(f => f.LoanItemId == it.Id && f.IsUnpaid); }
+                            @if (itemFee != null)
                             {
-                                <form asp-action="PayCompensation" method="post" onsubmit="return confirm('Xác nhận thẻ đã bồi thường khoản này?');">
-                                    <input type="hidden" name="id" value="@it.Id" />
-                                    <button class="btn btn-sm" type="submit">Xác nhận đã bồi thường</button>
-                                </form>
+                                <a class="btn btn-sm" asp-controller="AdminFees" asp-action="Pay" asp-route-id="@itemFee.Id">Thu tiền</a>
                             }
                         </td>
                     </tr>

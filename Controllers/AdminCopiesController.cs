@@ -1,4 +1,4 @@
-﻿using LibraryManagement.Data;
+using LibraryManagement.Data;
 using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LibraryManagement.Controllers
 {
     // quản lý ĐẦU SÁCH: TỪNG CUỐN của một mã sách (số kiểm soát 001, 002, ... tình trạng và ghi chú)
-    [Authorize(Roles = AppRoles.Admin)]
+    [Authorize(Roles = AppRoles.Staff)]
     public class AdminCopiesController : Controller
     {
         private readonly AppDbContext _db;
@@ -51,13 +51,16 @@ namespace LibraryManagement.Controllers
             var count = vm.Count!.Value;
             for (var i = 1; i <= count; i++)
             {
-                _db.BookCopies.Add(new BookCopy
+                var copy = new BookCopy
                 {
                     BookId = book.Id,
                     ControlNo = last + i,
                     Status = BookStatus.Available,
+                    StatusChangedAt = DateTime.Now,
                     Note = string.IsNullOrWhiteSpace(vm.Note) ? null : vm.Note.Trim()
-                });
+                };
+                _db.BookCopies.Add(copy);
+                Logs.Copy(_db, copy, null, BookStatus.Available, "Nhập kho", User.Identity?.Name, null, copy.Note);
             }
             await _db.SaveChangesAsync();
 
@@ -72,6 +75,11 @@ namespace LibraryManagement.Controllers
             var copy = await _db.BookCopies.AsNoTracking().Include(c => c.Book).FirstOrDefaultAsync(c => c.Id == id);
             if (copy == null) return NotFound();
 
+            if (copy.Status == BookStatus.Disposed)
+            {
+                TempData["Err"] = "Đầu sách đã thanh lý, không thể sửa.";
+                return RedirectToAction(nameof(Index), new { bookId = copy.BookId });
+            }
             if (copy.Status == BookStatus.Borrowed)
             {
                 TempData["Err"] = "Đầu sách đang cho mượn, không thể sửa. Hãy xử lý trả sách trước.";
@@ -94,9 +102,9 @@ namespace LibraryManagement.Controllers
         {
             var copy = await _db.BookCopies.Include(c => c.Book).FirstOrDefaultAsync(c => c.Id == vm.Id);
             if (copy == null) return NotFound();
-            if (copy.Status == BookStatus.Borrowed)
+            if (copy.Status == BookStatus.Borrowed || copy.Status == BookStatus.Disposed)
             {
-                TempData["Err"] = "Đầu sách đang cho mượn, không thể sửa.";
+                TempData["Err"] = "Đầu sách đang cho mượn hoặc đã thanh lý, không thể sửa.";
                 return RedirectToAction(nameof(Index), new { bookId = copy.BookId });
             }
 
@@ -113,12 +121,16 @@ namespace LibraryManagement.Controllers
             }
 
             var newStatus = vm.Status!.Value;
+            var newNote = string.IsNullOrWhiteSpace(vm.Note) ? null : vm.Note.Trim();
             if (newStatus != copy.Status)
             {
+                Logs.Copy(_db, copy, copy.Status, newStatus, "Admin cập nhật tình trạng", User.Identity?.Name, null, newNote);
                 copy.Status = newStatus;
                 copy.StatusChangedAt = DateTime.Now;
             }
-            copy.Note = string.IsNullOrWhiteSpace(vm.Note) ? null : vm.Note.Trim();
+            else if (newNote != copy.Note)
+                Logs.Copy(_db, copy, copy.Status, copy.Status, "Cập nhật ghi chú", User.Identity?.Name, null, newNote);
+            copy.Note = newNote;
             await _db.SaveChangesAsync();
 
             TempData["Msg"] = $"Đã cập nhật đầu sách {copy.ControlText}.";
@@ -133,7 +145,8 @@ namespace LibraryManagement.Controllers
             var copy = await _db.BookCopies.FirstOrDefaultAsync(c => c.Id == id);
             if (copy == null) return NotFound();
 
-            if (copy.Status == BookStatus.Borrowed || await _db.LoanItems.AnyAsync(i => i.CopyId == id))
+            if (copy.Status == BookStatus.Borrowed || await _db.LoanItems.AnyAsync(i => i.CopyId == id)
+                || await _db.DisposalItems.AnyAsync(d => d.CopyId == id))
             {
                 TempData["Err"] = $"Không thể xóa đầu sách {copy.ControlText} vì đã có lịch sử mượn.";
                 return RedirectToAction(nameof(Index), new { bookId = copy.BookId });

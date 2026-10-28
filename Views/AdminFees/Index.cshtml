@@ -1,0 +1,95 @@
+@model FeeListViewModel
+@{
+    ViewData["Title"] = "Phí & bồi thường";
+    var isAdmin = User.IsInRole("Admin");
+}
+<div class="toolbar">
+    <h1>Phí &amp; bồi thường</h1>
+    <div class="row-actions">
+        <a class="btn btn-sm btn-ghost" asp-action="Overdue">Sách quá hạn (@Model.OverdueLoans)</a>
+        <a class="btn btn-sm" asp-action="Create">+ Thêm khoản phí khác</a>
+    </div>
+</div>
+
+<div class="tiles">
+    <a class="tile bad" asp-action="Index" asp-route-status="unpaid"><b>@LibraryRules.Money(Model.UnpaidAmount)</b><span>Chưa thu (@Model.UnpaidCount khoản)</span></a>
+    <div class="tile good"><b>@LibraryRules.Money(Model.PaidThisMonth)</b><span>Đã thu tháng @DateTime.Now.Month/@DateTime.Now.Year</span></div>
+    <div class="tile"><b>@LibraryRules.Money(Model.WaivedAmount)</b><span>Đã miễn</span></div>
+    <a class="tile" asp-action="Overdue"><b>@Model.OverdueLoans</b><span>Phiếu mượn đang quá hạn</span></a>
+</div>
+
+<div class="tabs">
+    <a class="@(Model.Status is null or "unpaid" ? "on" : "")" asp-action="Index" asp-route-status="unpaid" asp-route-type="@Model.Type" asp-route-q="@Model.Q">Chưa thu</a>
+    <a class="@(Model.Status == "paid" ? "on" : "")" asp-action="Index" asp-route-status="paid" asp-route-type="@Model.Type" asp-route-q="@Model.Q">Đã thu</a>
+    <a class="@(Model.Status == "waived" ? "on" : "")" asp-action="Index" asp-route-status="waived" asp-route-type="@Model.Type" asp-route-q="@Model.Q">Đã miễn</a>
+    <a class="@(Model.Status == "all" ? "on" : "")" asp-action="Index" asp-route-status="all" asp-route-type="@Model.Type" asp-route-q="@Model.Q">Tất cả</a>
+</div>
+<form method="get" class="filters">
+    <input type="hidden" name="status" value="@(Model.Status ?? "unpaid")" />
+    <input name="q" value="@Model.Q" placeholder="Số thẻ, họ tên, email, số phiếu thu, nội dung..." />
+    <select name="type">
+        <option value="">Mọi loại phí</option>
+        <option value="late" selected="@(Model.Type == "late")">Trả muộn</option>
+        <option value="damaged" selected="@(Model.Type == "damaged")">Bồi thường hỏng</option>
+        <option value="lost" selected="@(Model.Type == "lost")">Bồi thường mất</option>
+        <option value="other" selected="@(Model.Type == "other")">Phí khác</option>
+    </select>
+    <button class="btn" type="submit">Lọc</button>
+</form>
+<p class="muted">Tìm thấy <b>@Model.Total</b> khoản phí.</p>
+
+@if (Model.Fees.Count == 0)
+{
+    <div class="empty">Không có khoản phí nào phù hợp.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Ngày</th><th>Độc giả</th><th>Loại</th><th>Nội dung</th><th class="num">Số tiền</th><th>Tình trạng</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var f in Model.Fees)
+                {
+                    <tr>
+                        <td>@f.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <a asp-controller="AdminCards" asp-action="Details" asp-route-id="@f.CardId">@f.Card?.CardNumber</a>
+                            <small>@f.Card?.User?.FullName</small>
+                        </td>
+                        <td>@Labels.FeeType(f.Type)</td>
+                        <td>@f.Description</td>
+                        <td class="num"><b>@LibraryRules.Money(f.Amount)</b></td>
+                        <td>
+                            <span class="badge @Labels.FeeStatusCss(f.Status)">@Labels.FeeStatus(f.Status)</span>
+                            @if (f.Status == FeeStatus.Paid)
+                            {
+                                <small>@f.ProcessedAt?.ToString("dd/MM/yyyy") · @Labels.Method(f.Method)</small>
+                            }
+                            else if (f.Status == FeeStatus.Waived)
+                            {
+                                <small>@f.Note</small>
+                            }
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                @if (f.IsUnpaid)
+                                {
+                                    <a class="btn btn-sm" asp-action="Pay" asp-route-id="@f.Id">Thu tiền</a>
+                                    if (isAdmin)
+                                    {
+                                        <a class="btn btn-sm btn-ghost" asp-action="Waive" asp-route-id="@f.Id">Miễn</a>
+                                    }
+                                }
+                                else if (f.Status == FeeStatus.Paid && f.ReceiptNo != null)
+                                {
+                                    <a class="btn btn-sm btn-ghost" asp-action="Receipt" asp-route-no="@f.ReceiptNo">Phiếu thu</a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.TotalPages)" />
+}

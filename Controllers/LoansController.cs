@@ -1,13 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Security.Claims;
 using LibraryManagement.Data;
 using LibraryManagement.Helpers;
 using LibraryManagement.Models;
+using LibraryManagement.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using System.Runtime.CompilerServices;
-using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 
 
 namespace LibraryManagement.Controllers
@@ -16,9 +15,11 @@ namespace LibraryManagement.Controllers
     public class LoansController : Controller
     {
         private readonly AppDbContext _db;
-        public LoansController(AppDbContext db) => _db = db;
+        private readonly FeeService _fees;
+        public LoansController(AppDbContext db, FeeService fees) { _db = db; _fees = fees; }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        private bool IsStaff => User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Librarian);
 
 
         // phiếu mượn hiện tại + lịch sử
@@ -35,7 +36,25 @@ namespace LibraryManagement.Controllers
                 .OrderByDescending(l => l.Id)
                 .ToListAsync();
 
-            return View(new MyLoansViewModel { Card = card, Loans = loans });
+            var unpaid = await _db.Fees.Where(f => f.CardId == card.Id && f.Status == FeeStatus.Unpaid).SumAsync(f => (int?)f.Amount) ?? 0;
+            return View(new MyLoansViewModel { Card = card, Loans = loans, UnpaidFees = unpaid });
+        }
+
+        // phí của tôi: bồi thường, trả muộn... và tình trạng thanh toán
+        [Authorize(Roles = AppRoles.Member)]
+        public async Task<IActionResult> Fees()
+        {
+            var uid = UserId;
+            var card = await _db.Cards.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == uid);
+            if (card == null) return RedirectToAction("Register", "LibraryCard");
+
+            var fees = await _db.Fees.AsNoTracking().Where(f => f.CardId == card.Id).OrderByDescending(f => f.Id).ToListAsync();
+            return View(new MyFeesViewModel
+            {
+                Card = card,
+                Fees = fees,
+                UnpaidAmount = fees.Where(f => f.IsUnpaid).Sum(f => f.Amount)
+            });
         }
 
 
@@ -117,14 +136,23 @@ namespace LibraryManagement.Controllers
                 copy.Status = BookStatus.Borrowed; // cập nhật tình trạng available -> borrowed
                 copy.StatusChangedAt = now;
             }
-            _db.Loans.Add(loan);
-            await _db.SaveChangesAsync();
+
+            // lưu phiếu mượn trước để có Id, rồi ghi nhật ký từng cuốn (cùng 1 transaction)
+            await using (var tx = await _db.Database.BeginTransactionAsync())
+            {
+                _db.Loans.Add(loan);
+                await _db.SaveChangesAsync();
+                foreach (var copy in copies)
+                    Logs.Copy(_db, copy, BookStatus.Available, BookStatus.Borrowed, "Cho mượn", User.Identity?.Name, loan.Id, $"Thẻ {card.CardNumber}");
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
 
             TempData["Msg"] = $"Mượn thành công {copies.Count} cuốn. Hạn trả: {loan.DueDate:dd/MM/yyyy}.";
             return RedirectToAction(nameof(Index));
         }
 
-        // trả sách
+        // trả sách (độc giả tự trả hoặc Admin / Thủ thư xử lý tại quầy)
         [HttpGet]
         public async Task<IActionResult> Return (int id)
         {
@@ -161,6 +189,7 @@ namespace LibraryManagement.Controllers
                 return View(vm);
             }
             var now = DateTime.Now;
+            var actor = User.Identity?.Name;
             var anyCompensation = false;
             foreach (var input in vm.Items)
             {
@@ -172,8 +201,10 @@ namespace LibraryManagement.Controllers
                 item.Compensation = LibraryRules.CalculateCompensation(status, item.Copy!.Book!.Price);
                 item.CompensationPaid = false;
 
+                var before = item.Copy.Status;
                 item.Copy.Status = status; //cập nhật tình trạng đầu sách
                 item.Copy.StatusChangedAt = now;
+                Logs.Copy(_db, item.Copy, before, status, "Trả sách", actor, loan.Id, item.Note);
 
                 if (item.Compensation > 0) anyCompensation = true;
             }
@@ -182,25 +213,39 @@ namespace LibraryManagement.Controllers
             if (anyCompensation)
                 loan.Card!.IsActive = false; // mất / hỏng sách thì thẻ sẽ không dc sử dựng đến khi bồi thường
 
+            // ghi sổ phí: bồi thường mất/hỏng + phí trả muộn (nếu có)
+            var fees = _fees.CreateReturnFees(loan, now);
+
             await _db.SaveChangesAsync();
 
-            if (anyCompensation)
-                TempData["Err"] = $"Đã ghi nhận trả sách. Có sách mất/hỏng: cần bồi thường {LibraryRules.Money(loan.TotalCompensation)} để thẻ sử dụng lại được.";
+            var late = fees.FirstOrDefault(f => f.Type == FeeType.Late);
+            if (anyCompensation || late != null)
+            {
+                var msg = "Đã ghi nhận trả sách.";
+                if (anyCompensation)
+                    msg += $" Có sách mất/hỏng: cần bồi thường {LibraryRules.Money(loan.TotalCompensation)} để thẻ sử dụng lại được.";
+                if (late != null)
+                    msg += $" Phí trả muộn {LibraryRules.LateDays(loan.DueDate, now)} ngày: {LibraryRules.Money(late.Amount)}.";
+                TempData["Err"] = msg;
+            }
             else
                 TempData["Msg"] = "Trả sách thành công.";
 
-            // admin quay vể trang chi tiết thẻ, member quay về "sách của tôi"
-            if (User.IsInRole(AppRoles.Admin)) return RedirectToAction("Details", "AdminCards", new { id = loan.CardId });
+            // admin / thủ thư quay vể trang chi tiết thẻ, member quay về "sách của tôi"
+            if (IsStaff) return RedirectToAction("Details", "AdminCards", new { id = loan.CardId });
             return RedirectToAction(nameof(Index));
         }
 
         // trả về lý do không được mượn
-        private async Task<string> BorrowBlockReason(LibraryCard card)
+        private async Task<string?> BorrowBlockReason(LibraryCard card)
         {
             if (!card.IsActive)
                 return "Thẻ thư viện không sử dụng được.";
             if (card.ExpiresAt < DateTime.Now)
                 return "Thẻ thư viện hết hạn.";
+            var unpaid = await _db.Fees.Where(f => f.CardId == card.Id && f.Status == FeeStatus.Unpaid).SumAsync(f => (int?)f.Amount) ?? 0;
+            if (unpaid > 0)
+                return $"Bạn còn khoản phí chưa thanh toán: {LibraryRules.Money(unpaid)}. Vui lòng thanh toán tại thư viện trước khi mượn tiếp.";
             if (await _db.Loans.AnyAsync(l => l.CardId == card.Id && l.ReturnedAt == null))
                 return "Bạn đang mượn sách, hãy trả sách xong mới được mượn tiếp!";
             return null;
@@ -216,15 +261,15 @@ namespace LibraryManagement.Controllers
                 .ToListAsync();
         }
 
-        // phiếu chưa trả, member chỉ thấy phiếu của mình, admin thấy tất cả
+        // phiếu chưa trả, member chỉ thấy phiếu của mình, admin / thủ thư thấy tất cả
         private async Task<Loan?> FindActiveLoan(int loanId)
         {
             var uid = UserId;
-            var isAdmin = User.IsInRole(AppRoles.Admin);
+            var isStaff = IsStaff;
             return await _db.Loans
                 .Include(l => l.Card)
                 .Include(l => l.Items).ThenInclude(i => i.Copy).ThenInclude(c => c!.Book)
-                .FirstOrDefaultAsync(l => l.Id == loanId && l.ReturnedAt == null && (isAdmin || l.Card!.UserId == uid));
+                .FirstOrDefaultAsync(l => l.Id == loanId && l.ReturnedAt == null && (isStaff || l.Card!.UserId == uid));
         }
     }
 }

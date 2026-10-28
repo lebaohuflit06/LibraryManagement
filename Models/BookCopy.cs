@@ -1,11 +1,12 @@
-﻿namespace LibraryManagement.Models
+namespace LibraryManagement.Models
 {
     public enum BookStatus
     {
         Available = 0, // còn
         Borrowed = 1, // cho mượn
         Lost = 2, // bị mất
-        Damaged = 3 // bị hư hỏng
+        Damaged = 3, // bị hư hỏng
+        Disposed = 4 // đã thanh lý (không còn trong kho)
     }
     public class BookCopy // một đầu sách, phân biệt bằng ControlNo
     {

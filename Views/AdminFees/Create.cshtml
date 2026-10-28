@@ -1,0 +1,26 @@
+@model FeeCreateViewModel
+@{ ViewData["Title"] = "Thêm khoản phí khác"; }
+<a class="back" asp-action="Index">← Quay lại phí &amp; bồi thường</a>
+<div class="card form">
+    <h1>Thêm khoản phí khác</h1>
+    <p class="muted">Dùng cho các khoản không tự sinh khi trả sách (ví dụ: làm lại thẻ, phí dịch vụ). Phí trả muộn và bồi thường được tạo tự động khi trả sách.</p>
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+
+        <label asp-for="CardId"></label>
+        <select asp-for="CardId" asp-items="Model.Cards">
+            <option value="">-- Chọn thẻ --</option>
+        </select>
+        <span asp-validation-for="CardId" class="err"></span>
+
+        <label asp-for="Amount"></label>
+        <input asp-for="Amount" type="number" min="1000" step="1000" />
+        <span asp-validation-for="Amount" class="err"></span>
+
+        <label asp-for="Description"></label>
+        <input asp-for="Description" />
+        <span asp-validation-for="Description" class="err"></span>
+
+        <button class="btn full" type="submit">Ghi nhận khoản phí</button>
+    </form>
+</div>

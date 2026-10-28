@@ -13,6 +13,11 @@ public class AppDbContext : DbContext
     public DbSet<BookCopy> BookCopies => Set<BookCopy>(); // sprint 2
     public DbSet<Loan> Loans => Set<Loan>(); // sprint 2
     public DbSet<LoanItem> LoanItems => Set<LoanItem>(); // sprint 2
+    public DbSet<Fee> Fees => Set<Fee>(); // sprint 3: sổ phí
+    public DbSet<CopyLog> CopyLogs => Set<CopyLog>(); // sprint 3: nhật ký tình trạng sách
+    public DbSet<DisposalReport> DisposalReports => Set<DisposalReport>(); // sprint 3: biên bản thanh lý
+    public DbSet<DisposalItem> DisposalItems => Set<DisposalItem>(); // sprint 3
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>(); // sprint 3: nhật ký thao tác
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -32,6 +37,23 @@ public class AppDbContext : DbContext
         b.Entity<LoanItem>().HasOne(i => i.Loan).WithMany(l => l.Items)
             .HasForeignKey(i => i.LoanId);
         b.Entity<LoanItem>().HasOne(i => i.Copy).WithMany()
+            .HasForeignKey(i => i.CopyId).OnDelete(DeleteBehavior.Restrict);
+
+        // ---- sprint 3 ----
+        b.Entity<Fee>().HasOne(f => f.Card).WithMany(c => c.Fees)
+            .HasForeignKey(f => f.CardId).OnDelete(DeleteBehavior.Restrict);
+        b.Entity<Fee>().HasOne(f => f.Loan).WithMany()
+            .HasForeignKey(f => f.LoanId).OnDelete(DeleteBehavior.Restrict);
+        b.Entity<Fee>().HasOne(f => f.LoanItem).WithMany()
+            .HasForeignKey(f => f.LoanItemId).OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<CopyLog>().HasOne(l => l.Copy).WithMany()
+            .HasForeignKey(l => l.CopyId).OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<DisposalReport>().HasIndex(r => r.Code).IsUnique();
+        b.Entity<DisposalItem>().HasOne(i => i.Report).WithMany(r => r.Items)
+            .HasForeignKey(i => i.ReportId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<DisposalItem>().HasOne(i => i.Copy).WithMany()
             .HasForeignKey(i => i.CopyId).OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<Book>().HasData(

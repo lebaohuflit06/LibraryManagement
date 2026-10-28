@@ -14,5 +14,6 @@ public class LibraryCard
     public DateTime ExpiresAt { get; set; }
     public bool IsActive { get; set; } = true; // thẻ còn hiệu lực hay không
     public List<Loan> Loans { get; set; } = new(); // lịch sử các lần mượn
+    public List<Fee> Fees { get; set; } = new(); // sổ phí: bồi thường, trả muộn...
 }
 

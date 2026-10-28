@@ -19,7 +19,7 @@ public class HomeController : Controller
         {
             NewBooks = await _db.Books.Include(b => b.Copies).OrderByDescending(b => b.Id).Take(4).ToListAsync(),
             Categories = await _db.Books.Select(b => b.Category).Distinct().ToListAsync(),
-            BookCount = await _db.BookCopies.CountAsync(c => c.Status != BookStatus.Lost),
+            BookCount = await _db.BookCopies.CountAsync(c => c.Status != BookStatus.Lost && c.Status != BookStatus.Disposed),
             MemberCount = await _db.Users.CountAsync(u => u.Role == AppRoles.Member)
         };
         return View(vm);

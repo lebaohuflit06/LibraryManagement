@@ -1,0 +1,84 @@
+@model DisposalIndexViewModel
+@{ ViewData["Title"] = "Báo cáo thanh lý năm " + Model.Year; }
+<div class="toolbar">
+    <h1>Báo cáo thanh lý sách cũ / rác — năm @Model.Year</h1>
+    <div class="row-actions no-print">
+        <a class="btn btn-sm" asp-action="Candidates">Sách đề xuất thanh lý (@Model.CandidateCount)</a>
+        <a class="btn btn-sm btn-ghost" asp-action="Export" asp-route-year="@Model.Year">Xuất CSV</a>
+        <button class="btn btn-sm btn-ghost" type="button" onclick="window.print()">In báo cáo</button>
+    </div>
+</div>
+<form method="get" class="filters">
+    <select name="year">
+        @foreach (var y in Model.Years)
+        {
+            <option value="@y" selected="@(y == Model.Year)">Năm @y</option>
+        }
+    </select>
+    <button class="btn" type="submit">Xem</button>
+</form>
+<p class="muted">
+    Sách được đề xuất thanh lý khi <b>mất</b>, <b>hỏng</b>, đã mượn từ <b>@LibraryRules.WornLoanCount</b> lượt trở lên (cũ rách) hoặc xuất bản từ <b>@LibraryRules.OldBookYears</b> năm trở lên (cũ).
+    Sau khi lập biên bản, sách chuyển sang "Đã thanh lý" và không còn trong kho.
+</p>
+
+<div class="tiles">
+    <div class="tile"><b>@Model.Reports.Count</b><span>Biên bản</span></div>
+    <div class="tile"><b>@Model.ItemCount</b><span>Cuốn đã thanh lý</span></div>
+    <div class="tile"><b>@LibraryRules.Money(Model.BookValue)</b><span>Giá trị sổ sách</span></div>
+    <div class="tile good"><b>@LibraryRules.Money(Model.Recovered)</b><span>Tiền thu hồi</span></div>
+</div>
+
+@if (Model.ItemCount > 0)
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Theo lý do</th><th class="num">Số cuốn</th><th>Theo hình thức</th><th class="num">Số cuốn</th></tr></thead>
+            <tbody>
+                @{
+                    var reasons = Model.ByReason.OrderBy(x => x.Key).ToList();
+                    var methods = Model.ByMethod.OrderBy(x => x.Key).ToList();
+                    var rowsN = Math.Max(reasons.Count, methods.Count);
+                }
+                @for (var i = 0; i < rowsN; i++)
+                {
+                    <tr>
+                        <td>@(i < reasons.Count ? Labels.DisposalReason(reasons[i].Key) : "")</td>
+                        <td class="num">@(i < reasons.Count ? reasons[i].Value.ToString() : "")</td>
+                        <td>@(i < methods.Count ? Labels.DisposalMethod(methods[i].Key) : "")</td>
+                        <td class="num">@(i < methods.Count ? methods[i].Value.ToString() : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="sec">Biên bản thanh lý</h2>
+@if (Model.Reports.Count == 0)
+{
+    <div class="empty">Năm @Model.Year chưa có biên bản thanh lý nào.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Số biên bản</th><th>Ngày lập</th><th>Người lập</th><th class="num">Số cuốn</th><th class="num">Giá trị sổ sách</th><th class="num">Thu hồi</th><th>Ghi chú</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Reports)
+                {
+                    <tr>
+                        <td><b>@r.Code</b></td>
+                        <td>@r.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@r.CreatedBy</td>
+                        <td class="num">@r.Items.Count</td>
+                        <td class="num">@LibraryRules.Money(r.TotalBookValue)</td>
+                        <td class="num">@LibraryRules.Money(r.RecoveredAmount)</td>
+                        <td>@r.Note</td>
+                        <td><a class="btn btn-sm" asp-action="Details" asp-route-id="@r.Id">Chi tiết</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

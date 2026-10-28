@@ -1,0 +1,78 @@
+@model TrackingViewModel
+@{ ViewData["Title"] = "Theo dõi tình trạng sách"; }
+<div class="toolbar">
+    <h1>Theo dõi tình trạng sách</h1>
+    <a class="btn btn-sm btn-ghost" asp-controller="AdminFees" asp-action="Overdue">Phí sách quá hạn</a>
+</div>
+<p class="muted">Tình trạng của từng cuốn sách trong kho. Bấm vào ô thống kê để lọc, bấm "Lịch sử" để xem cuốn đó đã được nhập, cho mượn, trả, sửa... khi nào và do ai.</p>
+
+<div class="tiles">
+    <a class="tile @(string.IsNullOrEmpty(Model.Status) ? "on" : "")" asp-action="Index" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.All</b><span>Tổng số cuốn</span></a>
+    <a class="tile good @(Model.Status == "available" ? "on" : "")" asp-action="Index" asp-route-status="available" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.Available</b><span>Còn trên kệ</span></a>
+    <a class="tile @(Model.Status == "borrowed" ? "on" : "")" asp-action="Index" asp-route-status="borrowed" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.Borrowed</b><span>Đang cho mượn</span></a>
+    <a class="tile bad @(Model.Status == "overdue" ? "on" : "")" asp-action="Index" asp-route-status="overdue" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.Overdue</b><span>Quá hạn chưa trả</span></a>
+    <a class="tile bad @(Model.Status == "damaged" ? "on" : "")" asp-action="Index" asp-route-status="damaged" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.Damaged</b><span>Hỏng</span></a>
+    <a class="tile bad @(Model.Status == "lost" ? "on" : "")" asp-action="Index" asp-route-status="lost" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.Lost</b><span>Mất</span></a>
+    <a class="tile @(Model.Status == "disposed" ? "on" : "")" asp-action="Index" asp-route-status="disposed" asp-route-q="@Model.Q" asp-route-category="@Model.Category"><b>@Model.Disposed</b><span>Đã thanh lý</span></a>
+</div>
+
+<form method="get" class="filters">
+    <input type="hidden" name="status" value="@Model.Status" />
+    <input name="q" value="@Model.Q" placeholder="Tên sách, tác giả, số kiểm soát (001), người mượn, số thẻ..." />
+    <select name="category">
+        <option value="">Mọi thể loại</option>
+        @foreach (var c in Model.Categories)
+        {
+            <option value="@c" selected="@(Model.Category == c)">@c</option>
+        }
+    </select>
+    <button class="btn" type="submit">Lọc</button>
+</form>
+<p class="muted">Hiển thị <b>@Model.TotalRows</b> cuốn.</p>
+
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty">Không có cuốn sách nào phù hợp.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Sách</th><th>Số KS</th><th>Tình trạng</th><th>Người mượn / hạn trả</th><th>Lượt mượn</th><th>Cập nhật</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Rows)
+                {
+                    var c = r.Copy;
+                    <tr>
+                        <td>@c.Book?.Title<small>@c.Book?.Author</small></td>
+                        <td><b>@c.ControlText</b></td>
+                        <td>
+                            <span class="badge @LibraryRules.StatusCss(c.Status)">@LibraryRules.StatusText(c.Status)</span>
+                            @if (r.IsOverdue) { <span class="badge b-bad">Quá hạn</span> }
+                        </td>
+                        <td>
+                            @if (r.CurrentLoan != null)
+                            {
+                                <a asp-controller="AdminCards" asp-action="Details" asp-route-id="@r.CurrentLoan.CardId">@r.CurrentLoan.Card?.User?.FullName</a>
+                                <small>@r.CurrentLoan.Card?.CardNumber · hạn @r.CurrentLoan.DueDate.ToString("dd/MM/yyyy")</small>
+                            }
+                            else { <span>—</span> }
+                        </td>
+                        <td>@r.LoanCount</td>
+                        <td>@(c.StatusChangedAt?.ToString("dd/MM/yyyy") ?? "—")<small>@c.Note</small></td>
+                        <td>
+                            <div class="row-actions">
+                                <a class="btn btn-sm" asp-action="Copy" asp-route-id="@c.Id">Lịch sử</a>
+                                @if (c.Status != BookStatus.Borrowed && c.Status != BookStatus.Disposed)
+                                {
+                                    <a class="btn btn-sm btn-ghost" asp-controller="AdminCopies" asp-action="Edit" asp-route-id="@c.Id">Cập nhật</a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.TotalPages)" />
+}

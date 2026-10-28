@@ -1,0 +1,86 @@
+@model CopyHistoryViewModel
+@{
+    var c = Model.Copy;
+    ViewData["Title"] = "Lịch sử " + c.Book?.Title + " " + c.ControlText;
+}
+<a class="back" asp-action="Index">← Quay lại theo dõi tình trạng sách</a>
+<div class="toolbar">
+    <h1>@c.Book?.Title — KS @c.ControlText <span class="badge @LibraryRules.StatusCss(c.Status)">@LibraryRules.StatusText(c.Status)</span></h1>
+    @if (c.Status != BookStatus.Borrowed && c.Status != BookStatus.Disposed)
+    {
+        <a class="btn btn-sm" asp-controller="AdminCopies" asp-action="Edit" asp-route-id="@c.Id">Cập nhật tình trạng</a>
+    }
+</div>
+<table class="meta narrow">
+    <tr><th>Mã sách</th><td>@c.BookId · @c.Book?.Author · @c.Book?.Category</td></tr>
+    <tr><th>Giá sách</th><td>@LibraryRules.Money(c.Book?.Price ?? 0)</td></tr>
+    <tr><th>Số lượt mượn</th><td>@Model.Loans.Count</td></tr>
+    <tr><th>Ghi chú hiện tại</th><td>@(c.Note ?? "—")</td></tr>
+    @if (Model.Disposal != null)
+    {
+        <tr>
+            <th>Thanh lý</th>
+            <td>
+                <a asp-controller="AdminDisposals" asp-action="Details" asp-route-id="@Model.Disposal.ReportId">@Model.Disposal.Report?.Code</a>
+                · @Labels.DisposalMethod(Model.Disposal.Method) · @Labels.DisposalReason(Model.Disposal.Reason)
+            </td>
+        </tr>
+    }
+</table>
+
+<h2 class="sec">Lịch sử tình trạng</h2>
+@if (Model.Logs.Count == 0)
+{
+    <div class="empty">Chưa có lịch sử.</div>
+}
+else
+{
+    <ul class="timeline">
+        @foreach (var l in Model.Logs)
+        {
+            <li>
+                <b>@l.Action</b>
+                @if (l.FromStatus != null)
+                {
+                    <span class="badge @LibraryRules.StatusCss(l.FromStatus)">@LibraryRules.StatusText(l.FromStatus)</span> <text>→</text>
+                }
+                <span class="badge @LibraryRules.StatusCss(l.ToStatus)">@LibraryRules.StatusText(l.ToStatus)</span>
+                <small>@l.At.ToString("dd/MM/yyyy HH:mm") · @l.Actor@(l.LoanId != null ? " · phiếu mượn #" + l.LoanId : "")</small>
+                @if (!string.IsNullOrWhiteSpace(l.Note)) { <small>Ghi chú: @l.Note</small> }
+            </li>
+        }
+    </ul>
+}
+
+<h2 class="sec">Các lượt mượn</h2>
+@if (Model.Loans.Count == 0)
+{
+    <div class="empty">Cuốn này chưa được mượn lần nào.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Phiếu</th><th>Độc giả</th><th>Ngày mượn</th><th>Hạn trả</th><th>Ngày trả</th><th>Tình trạng khi trả</th><th>Ghi chú</th></tr></thead>
+            <tbody>
+                @foreach (var it in Model.Loans)
+                {
+                    var l = it.Loan!;
+                    <tr>
+                        <td>#@l.Id</td>
+                        <td><a asp-controller="AdminCards" asp-action="Details" asp-route-id="@l.CardId">@l.Card?.User?.FullName</a><small>@l.Card?.CardNumber</small></td>
+                        <td>@l.BorrowedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@l.DueDate.ToString("dd/MM/yyyy")</td>
+                        <td>@(l.ReturnedAt?.ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td>
+                            @if (l.IsReturned) { <span class="badge @LibraryRules.StatusCss(it.ReturnStatus)">@LibraryRules.StatusText(it.ReturnStatus)</span> }
+                            else if (l.IsOverdue) { <span class="badge b-bad">Quá hạn</span> }
+                            else { <span class="badge b-warn">Đang mượn</span> }
+                        </td>
+                        <td>@it.Note</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

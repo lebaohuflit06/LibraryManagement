@@ -1,0 +1,47 @@
+@model FeePayViewModel
+@{
+    ViewData["Title"] = "Thu tiền";
+    var fee = Model.Fee!;
+    var othersTotal = Model.Others.Sum(o => o.Amount);
+}
+<a class="back" asp-action="Index">← Quay lại phí &amp; bồi thường</a>
+<div class="card form wide">
+    <h1>Thu tiền</h1>
+    <table class="meta">
+        <tr><th>Độc giả</th><td>@fee.Card?.User?.FullName · <a asp-controller="AdminCards" asp-action="Details" asp-route-id="@fee.CardId">@fee.Card?.CardNumber</a></td></tr>
+        <tr><th>Loại phí</th><td>@Labels.FeeType(fee.Type)</td></tr>
+        <tr><th>Nội dung</th><td>@fee.Description</td></tr>
+        <tr><th>Số tiền</th><td><b>@LibraryRules.Money(fee.Amount)</b></td></tr>
+    </table>
+    @if (fee.IsCompensation && fee.Card != null && !fee.Card.IsActive)
+    {
+        <div class="alert">Thẻ đang bị khóa do mất / hỏng sách. Thu xong khoản bồi thường cuối cùng, thẻ sẽ tự sử dụng được trở lại.</div>
+    }
+    <form asp-action="Pay" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="err"></div>
+
+        <label asp-for="Method"></label>
+        <select asp-for="Method">
+            <option value="@((int)PaymentMethod.Cash)">Tiền mặt</option>
+            <option value="@((int)PaymentMethod.Transfer)">Chuyển khoản</option>
+        </select>
+        <span asp-validation-for="Method" class="err"></span>
+
+        <label asp-for="Note"></label>
+        <input asp-for="Note" placeholder="Ví dụ: mã giao dịch chuyển khoản" />
+        <span asp-validation-for="Note" class="err"></span>
+
+        @if (Model.Others.Count > 0)
+        {
+            <label class="check"><input asp-for="IncludeOthers" /> @Html.DisplayNameFor(m => m.IncludeOthers) (@Model.Others.Count khoản, @LibraryRules.Money(othersTotal))</label>
+            <ul class="muted">
+                @foreach (var o in Model.Others)
+                {
+                    <li>@Labels.FeeType(o.Type): @o.Description — <b>@LibraryRules.Money(o.Amount)</b></li>
+                }
+            </ul>
+        }
+        <button class="btn full" type="submit" onclick="return confirm('Xác nhận đã nhận tiền?');">Xác nhận đã thu tiền</button>
+    </form>
+</div>

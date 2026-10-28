@@ -18,7 +18,7 @@ public class LibraryCardController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var card = await _db.Cards.Include(c => c.User).Include(c => c.Loans).ThenInclude(l => l.Items).FirstOrDefaultAsync(c => c.UserId == UserId);
+        var card = await _db.Cards.Include(c => c.User).Include(c => c.Loans).ThenInclude(l => l.Items).Include(c => c.Fees).FirstOrDefaultAsync(c => c.UserId == UserId);
         return card == null ? RedirectToAction(nameof(Register)) : View(card);
     }
 

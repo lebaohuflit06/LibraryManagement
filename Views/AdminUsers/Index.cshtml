@@ -1,0 +1,71 @@
+@model UserListViewModel
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+    var isAdmin = User.IsInRole("Admin");
+}
+<div class="toolbar">
+    <h1>Quản lý tài khoản</h1>
+    <a class="btn" asp-action="Create">+ Tạo tài khoản</a>
+</div>
+
+<form method="get" class="filters">
+    <input name="q" value="@Model.Q" placeholder="Họ tên, email, số thẻ (không cần gõ dấu)..." />
+    @if (isAdmin)
+    {
+        <select name="role">
+            <option value="">Mọi vai trò</option>
+            @foreach (var r in AppRoles.All)
+            {
+                <option value="@r" selected="@(Model.Role == r)">@AppRoles.Text(r)</option>
+            }
+        </select>
+    }
+    <select name="status">
+        <option value="">Mọi trạng thái</option>
+        <option value="active" selected="@(Model.Status == "active")">Đang hoạt động</option>
+        <option value="locked" selected="@(Model.Status == "locked")">Đã khóa</option>
+    </select>
+    <button class="btn" type="submit">Lọc</button>
+</form>
+<p class="muted">
+    Tìm thấy <b>@Model.Total</b> tài khoản · @Model.MemberCount thành viên · @Model.LockedCount đang bị khóa
+    @if (!isAdmin) { <text> · Thủ thư chỉ quản lý tài khoản Thành viên.</text> }
+</p>
+
+@if (Model.Users.Count == 0)
+{
+    <div class="empty">Không có tài khoản nào phù hợp.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead>
+                <tr><th>Họ tên</th><th>Vai trò</th><th>Thẻ thư viện</th><th>Ngày tạo</th><th>Đăng nhập gần nhất</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    <tr>
+                        <td>@u.FullName<small>@u.Email</small></td>
+                        <td><span class="badge @AppRoles.Css(u.Role)">@AppRoles.Text(u.Role)</span></td>
+                        <td>@(u.Card?.CardNumber ?? "—")</td>
+                        <td>@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@(u.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        <td>
+                            @if (u.IsLocked) { <span class="badge b-bad">Đã khóa</span> }
+                            else { <span class="badge b-ok">Hoạt động</span> }
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <a class="btn btn-sm" asp-action="Details" asp-route-id="@u.Id">Chi tiết</a>
+                                <a class="btn btn-sm" asp-action="Edit" asp-route-id="@u.Id">Sửa</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.TotalPages)" />
+}
