@@ -12,7 +12,4 @@ public class LibraryCard
     public DateTime DateOfBirth { get; set; }
     public DateTime IssuedAt { get; set; } = DateTime.Now;
     public DateTime ExpiresAt { get; set; }
-    public bool IsActive { get; set; } = true; // thẻ còn hiệu lực hay không
-    public List<Loan> Loans { get; set; } = new(); // lịch sử các lần mượn
 }
-
