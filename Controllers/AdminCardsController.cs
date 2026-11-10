@@ -1,4 +1,4 @@
-﻿using LibraryManagement.Data;
+using LibraryManagement.Data;
 using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -87,6 +87,7 @@ namespace LibraryManagement.Controllers
                 CardNumber = "TMP"
             };
             _db.Cards.Add(card);
+            await _db.SaveChangesAsync();                       // lưu trước để có Id
             card.CardNumber = LibraryRules.MakeCardNumber(card.Id);
             await _db.SaveChangesAsync();
 

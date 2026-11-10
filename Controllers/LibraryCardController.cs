@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LibraryManagement.Data;
+using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryManagement.Controllers;
 
-[Authorize]
+[Authorize(Roles = AppRoles.Member)]
 public class LibraryCardController : Controller
 {
     private readonly AppDbContext _db;

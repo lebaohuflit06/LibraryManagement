@@ -12,4 +12,6 @@ public class LibraryCard
     public DateTime DateOfBirth { get; set; }
     public DateTime IssuedAt { get; set; } = DateTime.Now;
     public DateTime ExpiresAt { get; set; }
+    public bool IsActive { get; set; } = true; // false khi còn nợ bồi thường hoặc bị admin khóa
+    public List<Loan> Loans { get; set; } = new();
 }

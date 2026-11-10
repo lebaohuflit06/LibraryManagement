@@ -12,6 +12,7 @@
             <tr><th>Nhà xuất bản</th><td>@Model.Publisher</td></tr>
             <tr><th>Năm xuất bản</th><td>@Model.Year</td></tr>
             <tr><th>Số trang</th><td>@Model.Pages</td></tr>
+            <tr><th>Giá bìa</th><td>@LibraryRules.Money(Model.Price)</td></tr>
             <tr><th>Tình trạng</th><td>
                 @if (Model.Available > 0) { <span class="stock in">Còn @Model.Available / @Model.Quantity cuốn</span> }
                 else { <span class="stock out">Đã hết (@Model.Quantity cuốn đang được mượn)</span> }
@@ -19,6 +20,17 @@
         </table>
         <h3>Giới thiệu</h3>
         <p>@Model.Description</p>
+        @if (User.IsInRole(AppRoles.Member))
+        {
+            if (Model.Available > 0)
+            {
+                <a class="btn" asp-controller="Loans" asp-action="Create" asp-route-bookId="@Model.Id">Đăng ký mượn sách</a>
+            }
+            else
+            {
+                <div class="alert">Sách hiện đã hết, vui lòng quay lại sau.</div>
+            }
+        }
         @if (User.Identity?.IsAuthenticated != true)
         {
             <div class="alert">Bạn cần <a asp-controller="Account" asp-action="Login">đăng nhập</a> và có thẻ thư viện để mượn sách.</div>

@@ -1,0 +1,35 @@
+@model AdminDashboardViewModel
+@{ ViewData["Title"] = "Trang quản trị"; }
+<h1>Trang quản trị</h1>
+<div class="dash">
+    <div><b>@Model.BookTitles</b><span>Mã sách</span></div>
+    <div><b>@Model.TotalCopies</b><span>Tổng số cuốn</span></div>
+    <div><b>@Model.AvailableCopies</b><span>Còn trên kệ</span></div>
+    <div><b>@Model.BorrowedCopies</b><span>Đang cho mượn</span></div>
+    <div><b>@Model.LostDamagedCopies</b><span>Mất / hỏng</span></div>
+    <div><b>@Model.Members</b><span>Thành viên</span></div>
+    <div><b>@Model.Cards</b><span>Thẻ thư viện</span></div>
+    <div><b>@Model.ActiveLoans</b><span>Phiếu đang mượn</span></div>
+    <div class="@(Model.OverdueLoans > 0 ? "warn" : "")"><b>@Model.OverdueLoans</b><span>Phiếu quá hạn</span></div>
+    <div class="@(Model.UnpaidFees > 0 ? "warn" : "")"><b>@LibraryRules.Money(Model.UnpaidFees)</b><span>Bồi thường chưa thu</span></div>
+</div>
+
+<h2 class="sec">📚 Quản lý sách</h2>
+<div class="grid tiles">
+    <a class="tile t1" asp-controller="AdminBooks" asp-action="Index"><b>Đầu sách</b><span>Thêm, sửa, xóa mã sách và từng cuốn.</span></a>
+    <a class="tile t1" asp-controller="AdminTracking" asp-action="Index"><b>Theo dõi tình trạng sách</b><span>Từng cuốn đang ở đâu, ai mượn, quá hạn.</span></a>
+    <a class="tile t1" asp-controller="AdminReports" asp-action="Liquidation"><b>Thanh lý sách</b><span>Sách cũ / rách / mất chờ thanh lý.</span></a>
+</div>
+
+<h2 class="sec">👤 Quản lý tài khoản</h2>
+<div class="grid tiles">
+    <a class="tile t2" asp-controller="AdminUsers" asp-action="Index"><b>Tài khoản thành viên</b><span>Thêm, sửa, khóa / mở khóa, xóa tài khoản.</span></a>
+    <a class="tile t2" asp-controller="AdminRoles" asp-action="Index"><b>Phân quyền</b><span>Gán quyền quản trị viên / thành viên.</span></a>
+    <a class="tile t2" asp-controller="AdminCards" asp-action="Index"><b>Thẻ thư viện</b><span>Cấp, sửa, xóa thẻ; xem lịch sử mượn.</span></a>
+</div>
+
+<h2 class="sec">💰 Phí &amp; báo cáo</h2>
+<div class="grid tiles">
+    <a class="tile t3" asp-controller="AdminFees" asp-action="Index"><b>Xử lý khoản phí</b><span>Thu tiền bồi thường, mở lại thẻ.</span></a>
+    <a class="tile t3" asp-controller="AdminReports" asp-action="LostDamaged"><b>Báo cáo tình trạng &amp; bồi thường</b><span>Sách mất / hỏng và bồi thường theo năm.</span></a>
+</div>

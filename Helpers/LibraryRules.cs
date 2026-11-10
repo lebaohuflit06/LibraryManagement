@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using LibraryManagement.Models;
 
 namespace LibraryManagement.Helpers
@@ -36,6 +36,7 @@ namespace LibraryManagement.Helpers
                 case BookStatus.Borrowed: return "Cho mượn";
                 case BookStatus.Lost: return "Mất";
                 case BookStatus.Damaged: return "Hỏng";
+                case BookStatus.Liquidated: return "Đã thanh lý";
                 default: return "-";
             }
         }
@@ -47,6 +48,7 @@ namespace LibraryManagement.Helpers
             {
                 case BookStatus.Available: return "b-ok";
                 case BookStatus.Borrowed: return "b-warn";
+                case BookStatus.Liquidated: return "b-muted";
                 default: return "b-bad";
             }
         }
@@ -54,6 +56,8 @@ namespace LibraryManagement.Helpers
         // tự định dạng tiền để ko phụ thuộc vào ngôn ngữ cài đặt của máy
         public static string Money(int amount) => amount.ToString("N0", CultureInfo.InvariantCulture).Replace(',', '.') + "đ";
 
+
+        public static string RoleText(string? role) => role == AppRoles.Admin ? "Quản trị viên" : "Thành viên";
 
         // tạo số thẻ: TV + 2 số cuối của năm + ID 5 chữ số, ví dụ: TV2300001
         public static string MakeCardNumber(int cardId) => $"TV{DateTime.Now:yy}{cardId:D5}";

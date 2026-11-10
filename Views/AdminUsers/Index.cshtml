@@ -1,0 +1,53 @@
+@model List<AppUser>
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+    var q = ViewBag.Q as string;
+    int me = ViewBag.CurrentUserId;
+}
+<div class="toolbar">
+    <h1>Quản lý tài khoản thành viên</h1>
+    <a class="btn" asp-action="Create">+ Thêm tài khoản</a>
+</div>
+<form method="get" class="search wide">
+    <input name="q" value="@q" placeholder="Họ tên, email, số thẻ (không cần gõ dấu)..." />
+    <button class="btn" type="submit">Tìm</button>
+</form>
+<p class="muted">Có <b>@Model.Count</b> tài khoản</p>
+<div class="tbl-wrap">
+    <table class="tbl">
+        <thead><tr><th>#</th><th>Họ tên</th><th>Email</th><th>Quyền</th><th>Thẻ</th><th>Ngày tạo</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.Id</td>
+                <td>@u.FullName</td>
+                <td>@u.Email</td>
+                <td>@LibraryRules.RoleText(u.Role)</td>
+                <td>@(u.Card?.CardNumber ?? "—")</td>
+                <td>@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                <td>
+                    @if (u.IsLocked) { <span class="badge b-bad">Đã khóa</span> }
+                    else { <span class="badge b-ok">Hoạt động</span> }
+                </td>
+                <td>
+                    <div class="row-actions">
+                        <a class="btn btn-sm" asp-action="Edit" asp-route-id="@u.Id">Sửa</a>
+                        @if (u.Id != me)
+                        {
+                            <form asp-action="ToggleLock" method="post">
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <button class="btn btn-sm btn-ghost" type="submit">@(u.IsLocked ? "Mở khóa" : "Khóa")</button>
+                            </form>
+                            <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa tài khoản này?');">
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                            </form>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,4 +1,4 @@
-﻿using LibraryManagement.Data;
+using LibraryManagement.Data;
 using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -18,9 +18,9 @@ namespace LibraryManagement.Controllers
         // danh sách đầu sách của một mã sách (read)
         public async Task<IActionResult> Index(int bookId)
         {
-            var book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == bookId);
+            var book = await _db.Books.AsNoTracking().Include(b => b.Copies).FirstOrDefaultAsync(b => b.Id == bookId);
             if (book == null) return NotFound();
-            return View(new CopyCreateViewModel { BookId = bookId, Count = 1, BookTitle = book.Title });
+            return View(book);
         }
 
 
@@ -72,9 +72,9 @@ namespace LibraryManagement.Controllers
             var copy = await _db.BookCopies.AsNoTracking().Include(c => c.Book).FirstOrDefaultAsync(c => c.Id == id);
             if (copy == null) return NotFound();
 
-            if (copy.Status == BookStatus.Borrowed)
+            if (copy.Status == BookStatus.Borrowed || copy.Status == BookStatus.Liquidated)
             {
-                TempData["Err"] = "Đầu sách đang cho mượn, không thể sửa. Hãy xử lý trả sách trước.";
+                TempData["Err"] = "Đầu sách đang cho mượn hoặc đã thanh lý, không thể sửa.";
                 return RedirectToAction(nameof(Index), new { bookId = copy.BookId });
             }
 
@@ -94,9 +94,9 @@ namespace LibraryManagement.Controllers
         {
             var copy = await _db.BookCopies.Include(c => c.Book).FirstOrDefaultAsync(c => c.Id == vm.Id);
             if (copy == null) return NotFound();
-            if (copy.Status == BookStatus.Borrowed)
+            if (copy.Status == BookStatus.Borrowed || copy.Status == BookStatus.Liquidated)
             {
-                TempData["Err"] = "Đầu sách đang cho mượn, không thể sửa.";
+                TempData["Err"] = "Đầu sách đang cho mượn hoặc đã thanh lý, không thể sửa.";
                 return RedirectToAction(nameof(Index), new { bookId = copy.BookId });
             }
 

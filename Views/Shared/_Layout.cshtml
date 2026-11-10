@@ -9,17 +9,61 @@
 <body>
 <header class="topbar">
     <div class="wrap bar">
-        <a class="brand" asp-controller="Home" asp-action="Index"><span class="logo">📖</span> Thư viện Sách Việt</a>
+        @if (User.IsInRole(AppRoles.Admin))
+        {
+            <a class="brand" asp-controller="Admin" asp-action="Index"><span class="logo">📖</span> Thư viện Sách Việt</a>
+        }
+        else
+        {
+            <a class="brand" asp-controller="Home" asp-action="Index"><span class="logo">📖</span> Thư viện Sách Việt</a>
+        }
         <nav>
-            <a asp-controller="Home" asp-action="Index">Trang chủ</a>
-            <a asp-controller="Books" asp-action="Index">Tra cứu sách</a>
+            @if (!User.IsInRole(AppRoles.Admin))
+            {
+                <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+                <a asp-controller="Books" asp-action="Index">Tra cứu sách</a>
+            }
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <a asp-controller="LibraryCard" asp-action="Index">Thẻ thư viện</a>
-                <span class="hello">Xin chào, <b>@User.Identity.Name</b></span>
-                <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
-                    <button class="btn btn-ghost" type="submit">Đăng xuất</button>
-                </form>
+                if (User.IsInRole(AppRoles.Admin))
+                {
+                    <div class="dd">
+                        <button class="dd-btn" type="button">📚 Quản lý sách ▾</button>
+                        <div class="dd-menu">
+                            <a asp-controller="AdminBooks" asp-action="Index"><b>Đầu sách</b><small>Thêm, sửa, xóa mã sách và từng cuốn</small></a>
+                            <a asp-controller="AdminTracking" asp-action="Index"><b>Theo dõi tình trạng</b><small>Cuốn nào đang mượn, mất, hỏng, quá hạn</small></a>
+                            <a asp-controller="AdminReports" asp-action="Liquidation"><b>Thanh lý sách</b><small>Báo cáo và thanh lý sách cũ, rách, mất</small></a>
+                        </div>
+                    </div>
+                    <div class="dd">
+                        <button class="dd-btn" type="button">👤 Quản lý tài khoản ▾</button>
+                        <div class="dd-menu">
+                            <a asp-controller="AdminUsers" asp-action="Index"><b>Tài khoản thành viên</b><small>Thêm, sửa, khóa, xóa tài khoản</small></a>
+                            <a asp-controller="AdminRoles" asp-action="Index"><b>Phân quyền</b><small>Gán quyền Admin / Thành viên</small></a>
+                            <a asp-controller="AdminCards" asp-action="Index"><b>Thẻ thư viện</b><small>Cấp, sửa, xóa thẻ của thành viên</small></a>
+                        </div>
+                    </div>
+                    <div class="dd">
+                        <button class="dd-btn" type="button">💰 Phí &amp; báo cáo ▾</button>
+                        <div class="dd-menu">
+                            <a asp-controller="AdminFees" asp-action="Index"><b>Xử lý khoản phí</b><small>Thu tiền bồi thường, mở lại thẻ</small></a>
+                            <a asp-controller="AdminReports" asp-action="LostDamaged"><b>Báo cáo bồi thường</b><small>Sách mất / hỏng và bồi thường theo năm</small></a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a asp-controller="LibraryCard" asp-action="Index">Thẻ thư viện</a>
+                    <a asp-controller="Loans" asp-action="Index">Sách của tôi</a>
+                }
+                <div class="dd dd-right">
+                    <button class="dd-btn" type="button">Xin chào, <b>@User.Identity.Name</b> ▾</button>
+                    <div class="dd-menu">
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            <button class="dd-logout" type="submit"><b>Đăng xuất</b><small>Thoát khỏi tài khoản</small></button>
+                        </form>
+                    </div>
+                </div>
             }
             else
             {
@@ -35,9 +79,13 @@
     {
         <div class="alert ok">@msg</div>
     }
+    @if (TempData["Err"] is string err)
+    {
+        <div class="alert bad">@err</div>
+    }
     @RenderBody()
 </main>
 
-<footer class="foot">© @DateTime.Now.Year Thư viện Sách Việt — Đồ án Quản lý thư viện</footer>
+<footer class="foot">© @DateTime.Now.Year Thư viện Sách Việt — Đồ án Quản lí thư viện</footer>
 </body>
 </html>

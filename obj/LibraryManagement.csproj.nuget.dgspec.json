@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\QLTV\\LibraryManagement\\LibraryManagement\\LibraryManagement.csproj": {}
+    "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\LibraryManagement\\LibraryManagement.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\QLTV\\LibraryManagement\\LibraryManagement\\LibraryManagement.csproj": {
+    "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\LibraryManagement\\LibraryManagement.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\QLTV\\LibraryManagement\\LibraryManagement\\LibraryManagement.csproj",
+        "projectUniqueName": "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\LibraryManagement\\LibraryManagement.csproj",
         "projectName": "LibraryManagement",
-        "projectPath": "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\QLTV\\LibraryManagement\\LibraryManagement\\LibraryManagement.csproj",
+        "projectPath": "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\LibraryManagement\\LibraryManagement.csproj",
         "packagesPath": "C:\\Users\\Name\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\QLTV\\LibraryManagement\\LibraryManagement\\obj\\",
+        "outputPath": "C:\\Users\\Name\\Desktop\\BAOHK6\\CNPM_NC\\LibraryManagement\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

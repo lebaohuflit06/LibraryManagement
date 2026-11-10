@@ -1,4 +1,5 @@
 using LibraryManagement.Data;
+using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,10 @@ public class HomeController : Controller
     {
         var vm = new HomeViewModel
         {
-            NewBooks = await _db.Books.OrderByDescending(b => b.Id).Take(4).ToListAsync(),
-            Categories = await _db.Books.Select(b => b.Category).Distinct().ToListAsync(),
-            BookCount = await _db.Books.SumAsync(b => b.Quantity),
-            MemberCount = await _db.Users.CountAsync()
+            NewBooks = await _db.Books.AsNoTracking().Include(b => b.Copies).OrderByDescending(b => b.Id).Take(4).ToListAsync(),
+            Categories = await _db.Books.Select(b => b.Category).Distinct().OrderBy(c => c).ToListAsync(),
+            BookCount = await _db.BookCopies.CountAsync(c => c.Status != BookStatus.Liquidated),
+            MemberCount = await _db.Users.CountAsync(u => u.Role == AppRoles.Member)
         };
         return View(vm);
     }

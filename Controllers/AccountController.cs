@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LibraryManagement.Data;
+using LibraryManagement.Helpers;
 using LibraryManagement.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -30,7 +31,7 @@ public class AccountController : Controller
             return View(vm);
         }
 
-        var user = new AppUser { FullName = vm.FullName.Trim(), Email = email };
+        var user = new AppUser { FullName = vm.FullName.Trim(), Email = email, Role = AppRoles.Member };
         user.PasswordHash = _hasher.HashPassword(user, vm.Password);
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -56,11 +57,21 @@ public class AccountController : Controller
             ModelState.AddModelError("", "Email hoặc mật khẩu không đúng");
             return View(vm);
         }
+        if (user.IsLocked)
+        {
+            ModelState.AddModelError("", "Tài khoản đã bị khóa. Vui lòng liên hệ thư viện.");
+            return View(vm);
+        }
 
         await SignIn(user);
         if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl)) return Redirect(vm.ReturnUrl);
+        // Admin vào thẳng trang quản trị
+        if (user.Role == AppRoles.Admin) return RedirectToAction("Index", "Admin");
         return RedirectToAction("Index", "Home");
     }
+
+    // Không đủ quyền truy cập
+    [HttpGet] public IActionResult AccessDenied() => View();
 
     // Đăng xuất
     [HttpPost, ValidateAntiForgeryToken]
@@ -76,7 +87,8 @@ public class AccountController : Controller
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.FullName),
-            new(ClaimTypes.Email, user.Email)
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Role, user.Role)
         };
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
         return HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);

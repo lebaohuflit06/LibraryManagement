@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Security.Claims;
 using LibraryManagement.Data;
@@ -195,7 +195,7 @@ namespace LibraryManagement.Controllers
         }
 
         // trả về lý do không được mượn
-        private async Task<string> BorrowBlockReason(LibraryCard card)
+        private async Task<string?> BorrowBlockReason(LibraryCard card)
         {
             if (!card.IsActive)
                 return "Thẻ thư viện không sử dụng được.";

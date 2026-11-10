@@ -1,0 +1,42 @@
+@model List<AppUser>
+@{
+    ViewData["Title"] = "Phân quyền";
+    int me = ViewBag.CurrentUserId;
+}
+<h1>Quản lý phân quyền</h1>
+<p class="muted">
+    <b>Quản trị viên</b>: quản lý sách, thẻ, tài khoản, phí và báo cáo. <b>Thành viên</b>: tra cứu, đăng ký thẻ, mượn / trả sách.
+    Sau khi đổi quyền, người dùng sẽ phải đăng nhập lại.
+</p>
+<div class="tbl-wrap">
+    <table class="tbl">
+        <thead><tr><th>Họ tên</th><th>Email</th><th>Quyền hiện tại</th><th>Đổi quyền</th></tr></thead>
+        <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.FullName</td>
+                <td>@u.Email</td>
+                <td><span class="badge @(u.Role == AppRoles.Admin ? "b-warn" : "b-ok")">@LibraryRules.RoleText(u.Role)</span></td>
+                <td>
+                    @if (u.Id == me)
+                    {
+                        <small>Tài khoản của bạn</small>
+                    }
+                    else
+                    {
+                        <form asp-action="SetRole" method="post" class="row-actions">
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <select name="role">
+                                <option value="Member" selected="@(u.Role == AppRoles.Member)">Thành viên</option>
+                                <option value="Admin" selected="@(u.Role == AppRoles.Admin)">Quản trị viên</option>
+                            </select>
+                            <button class="btn btn-sm" type="submit">Lưu</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

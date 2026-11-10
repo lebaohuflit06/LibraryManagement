@@ -1,0 +1,81 @@
+@model TrackingViewModel
+@{ ViewData["Title"] = "Theo dõi tình trạng sách"; }
+<h1>Theo dõi tình trạng sách</h1>
+<div class="dash">
+    <div><b>@Model.AvailableCount</b><span>Còn</span></div>
+    <div><b>@Model.BorrowedCount</b><span>Cho mượn</span></div>
+    <div><b>@Model.LostCount</b><span>Mất</span></div>
+    <div><b>@Model.DamagedCount</b><span>Hỏng</span></div>
+    <div><b>@Model.LiquidatedCount</b><span>Đã thanh lý</span></div>
+    <div class="@(Model.OverdueLoans.Count > 0 ? "warn" : "")"><b>@Model.OverdueLoans.Count</b><span>Phiếu quá hạn</span></div>
+</div>
+
+@if (Model.OverdueLoans.Count > 0)
+{
+    <h2 class="sec">Phiếu mượn quá hạn</h2>
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Phiếu</th><th>Người mượn</th><th>Sách</th><th>Hạn trả</th><th>Trễ</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var l in Model.OverdueLoans)
+            {
+                <tr>
+                    <td>#@l.Id</td>
+                    <td>@l.Card?.User?.FullName<small>@l.Card?.CardNumber · @l.Card?.Phone</small></td>
+                    <td>@(string.Join(", ", l.Items.Select(i => i.Copy?.Book?.Title + " (" + i.Copy?.ControlText + ")")))</td>
+                    <td>@l.DueDate.ToString("dd/MM/yyyy")</td>
+                    <td><span class="badge b-bad">@((DateTime.Today - l.DueDate.Date).Days) ngày</span></td>
+                    <td><a class="btn btn-sm" asp-controller="Loans" asp-action="Return" asp-route-id="@l.Id">Xử lý trả sách</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="sec">Tình trạng từng cuốn</h2>
+<form method="get" class="search wide">
+    <input name="q" value="@Model.Q" placeholder="Tên sách, tác giả, số kiểm soát..." />
+    <select name="status">
+        <option value="">Tất cả tình trạng</option>
+        @foreach (var s in new[] { BookStatus.Available, BookStatus.Borrowed, BookStatus.Lost, BookStatus.Damaged, BookStatus.Liquidated })
+        {
+            <option value="@((int)s)" selected="@(Model.Status == s)">@LibraryRules.StatusText(s)</option>
+        }
+    </select>
+    <button class="btn" type="submit">Lọc</button>
+</form>
+<p class="muted">Có <b>@Model.Rows.Count</b> cuốn</p>
+<div class="tbl-wrap">
+    <table class="tbl">
+        <thead><tr><th>Mã sách</th><th>Tên sách</th><th>Số KS</th><th>Tình trạng</th><th>Người đang mượn</th><th>Hạn trả</th><th>Cập nhật</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr>
+                <td>@r.Copy.BookId</td>
+                <td>@r.Copy.Book?.Title</td>
+                <td>@r.Copy.ControlText</td>
+                <td><span class="badge @LibraryRules.StatusCss(r.Copy.Status)">@LibraryRules.StatusText(r.Copy.Status)</span></td>
+                <td>
+                    @if (r.ActiveLoan != null)
+                    {
+                        <text>@r.ActiveLoan.Card?.User?.FullName</text>
+                        <small>@r.ActiveLoan.Card?.CardNumber</small>
+                    }
+                    else { <span>—</span> }
+                </td>
+                <td>
+                    @if (r.ActiveLoan != null)
+                    {
+                        <text>@r.ActiveLoan.DueDate.ToString("dd/MM/yyyy")</text>
+                        if (r.ActiveLoan.IsOverdue) { <span class="badge b-bad">Quá hạn</span> }
+                    }
+                    else { <span>—</span> }
+                </td>
+                <td>@(r.Copy.StatusChangedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

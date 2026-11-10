@@ -1,0 +1,60 @@
+@model FeesViewModel
+@{ ViewData["Title"] = "Xử lý khoản phí"; }
+<h1>Xử lý các khoản phí</h1>
+<p class="muted">
+    Khoản bồi thường phát sinh khi trả sách mất / hỏng. Khi thu đủ tiền, bấm xác nhận để thẻ sử dụng được trở lại.
+</p>
+<div class="dash">
+    <div class="@(Model.TotalUnpaid > 0 ? "warn" : "")"><b>@LibraryRules.Money(Model.TotalUnpaid)</b><span>Chưa thu</span></div>
+    <div><b>@LibraryRules.Money(Model.TotalPaid)</b><span>Đã thu</span></div>
+</div>
+<form method="get" class="search wide">
+    <input name="q" value="@Model.Q" placeholder="Họ tên, số thẻ, tên sách..." />
+    <select name="filter">
+        <option value="unpaid" selected="@(Model.Filter == "unpaid")">Chưa thu</option>
+        <option value="paid" selected="@(Model.Filter == "paid")">Đã thu</option>
+        <option value="all" selected="@(Model.Filter == "all")">Tất cả</option>
+    </select>
+    <button class="btn" type="submit">Lọc</button>
+</form>
+@if (Model.Items.Count == 0)
+{
+    <div class="empty">Không có khoản phí nào.</div>
+}
+else
+{
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Phiếu</th><th>Người mượn</th><th>Sách</th><th>Tình trạng</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var i in Model.Items)
+            {
+                <tr>
+                    <td>#@i.LoanId</td>
+                    <td>
+                        <a asp-controller="AdminCards" asp-action="Details" asp-route-id="@i.Loan?.CardId">@i.Loan?.Card?.User?.FullName</a>
+                        <small>@i.Loan?.Card?.CardNumber</small>
+                    </td>
+                    <td>@i.Copy?.Book?.Title<small>Số KS @i.Copy?.ControlText</small></td>
+                    <td>@LibraryRules.StatusText(i.ReturnStatus)</td>
+                    <td><b>@LibraryRules.Money(i.Compensation)</b></td>
+                    <td>
+                        @if (i.CompensationPaid) { <span class="badge b-ok">Đã thu</span> }
+                        else { <span class="badge b-bad">Chưa thu</span> }
+                    </td>
+                    <td>
+                        @if (i.IsUnpaid)
+                        {
+                            <form asp-action="Pay" method="post" onsubmit="return confirm('Xác nhận đã thu khoản bồi thường này?');">
+                                <input type="hidden" name="id" value="@i.Id" />
+                                <input type="hidden" name="filter" value="@Model.Filter" />
+                                <button class="btn btn-sm" type="submit">Xác nhận đã thu</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
