@@ -1,5 +1,7 @@
 # Thư viện Sách Việt (ASP.NET Core MVC, .NET 8, SQLite)
-Tài khoản quản trị mặc định: `admin@gmail.com` / `Admin@123`
+Tài khoản Admin mặc định: `admin@gmail.com` / `Admin@123`
+Tài khoản thành viên : `bao@gmail.com` / `123456`
+
 
 ## Chức năng
 Khách / thành viên: 
